@@ -7,6 +7,7 @@ pub mod highlight;
 pub mod links;
 pub mod markdown;
 pub mod render;
+pub mod search;
 pub mod serve;
 pub mod site;
 
@@ -91,8 +92,11 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
     let mut out = BuildOutput::default();
     out.files.extend(assets.files);
 
+    // 언어 코드 → 그 언어의 검색 색인 행들.
+    let mut index: BTreeMap<String, Vec<search::Entry>> = BTreeMap::new();
+
     for page in &pages {
-        let html = render_page(
+        let (html, entry) = render_page(
             page,
             &site,
             &cfg,
@@ -104,6 +108,13 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
             page.out_path.to_string_lossy().replace('\\', "/"),
             html.into_bytes(),
         );
+        index.entry(page.language.clone()).or_default().push(entry);
+    }
+
+    for (language, entries) in index {
+        let json = serde_json::to_vec(&entries)
+            .with_context(|| format!("{language} 검색 색인을 만들 수 없습니다"))?;
+        out.files.insert(search::path(&language), json);
     }
 
     // GitHub Pages는 이 파일이 없으면 출력을 Jekyll로 한 번 더 굴려서
@@ -149,6 +160,8 @@ fn resolve_output_dir(opts: &BuildOptions, cfg: &Config) -> PathBuf {
     }
 }
 
+/// 페이지 HTML과 그 페이지의 검색 색인 행을 함께 낸다. 본문 평문은 렌더 과정에서
+/// 이미 나오므로, 색인을 위해 문서를 다시 파싱하지 않는다.
 fn render_page(
     page: &Page,
     site: &Site,
@@ -156,7 +169,7 @@ fn render_page(
     templates: &Templates,
     md: &markdown::Renderer,
     highlight_css: Option<&str>,
-) -> Result<String> {
+) -> Result<(String, search::Entry)> {
     let template = select_template(page, site, templates)?;
 
     let site_ctx = SiteCtx {
@@ -178,6 +191,24 @@ fn render_page(
         );
     }
 
+    // 섹션 인덱스는 자기 자신이 섹션이라 라벨과 제목이 겹친다. 그때는 비워 둔다.
+    let section = if page.is_section {
+        None
+    } else {
+        site.section_ref_of(page)
+    };
+
+    let entry = search::Entry {
+        t: page.title.clone(),
+        d: page.front.description.clone(),
+        u: page.url.clone(),
+        s: section
+            .as_ref()
+            .map(|s| s.title.clone())
+            .unwrap_or_default(),
+        c: rendered.text.clone(),
+    };
+
     let page_ctx = PageCtx {
         title: page.title.clone(),
         description: page.front.description.clone(),
@@ -194,12 +225,15 @@ fn render_page(
         // 언어 전환 UI를 보일지 결정하면 된다.
         translations: site.translations_of(page),
         children: site.children_of(page),
+        section,
         is_section: page.is_section,
     };
 
-    templates
+    let html = templates
         .render(&template, context! { site => site_ctx, page => page_ctx })
-        .with_context(|| format!("{} 렌더 중", page.source.display()))
+        .with_context(|| format!("{} 렌더 중", page.source.display()))?;
+
+    Ok((html, entry))
 }
 
 /// 템플릿 선택은 **명시적**이다. 순서는 딱 넷:

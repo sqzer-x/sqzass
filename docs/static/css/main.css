@@ -1,26 +1,36 @@
 /* sqzass documentation
  *
- * The page is monochrome. The only colour on it comes from the code, which is
- * the point: highlighting is the feature this tool does properly, and a brand
- * colour competing with it would be noise. One accent exists, used solely for
- * links and focus, because a link that is not visibly a link is a defect.
+ * Dark first, and one accent. The page is otherwise achromatic, because the
+ * colour that matters is in the code: highlighting is the feature this tool
+ * does properly, and a second palette competing with it would be noise. The
+ * accent is warm on purpose — it sits away from the blues and greens of the
+ * syntax theme instead of arguing with them.
+ *
+ * The accent carries meaning, never decoration: links, the focus ring, the
+ * current item, and the rule under the page title. If it is orange, it is
+ * something you can go to or something you are on.
  *
  * The +++ rule appears once per page, between the title block and the body.
  * That is the same boundary it marks in a source file: front matter ends,
  * content begins. It is the one decorative-looking thing here and it is not
  * decoration.
+ *
+ * The theme is chosen by [data-theme], written into the document by the
+ * template and overridden from localStorage — not by prefers-color-scheme.
+ * The generated highlight stylesheet keys off the same attribute, so the two
+ * cannot disagree, including with JavaScript off.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  --paper:   #fbfbfc;
-  --raised:  #f1f3f5;
-  --ink:     #14171a;
-  --ink-2:   #4a5058;
-  --ink-3:   #767d86;
-  --rule:    #e2e5e9;
-  --accent:  #1946c9;
+  --paper:   #0e1013;
+  --raised:  #171a1e;
+  --ink:     #e8eaec;
+  --ink-2:   #a7adb4;
+  --ink-3:   #6f767e;
+  --rule:    #242930;
+  --accent:  #f0a15e;
 
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR",
           "Apple SD Gothic Neo", "Malgun Gothic", Roboto, sans-serif;
@@ -38,25 +48,18 @@
   --s4:  2.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper:  #0f1113;
-    --raised: #17191d;
-    --ink:    #e9ebed;
-    --ink-2:  #a9afb6;
-    --ink-3:  #71787f;
-    --rule:   #262a2f;
-    --accent: #86a8ff;
-  }
-}
-:root[data-theme="dark"] {
-  --paper:  #0f1113;
-  --raised: #17191d;
-  --ink:    #e9ebed;
-  --ink-2:  #a9afb6;
-  --ink-3:  #71787f;
-  --rule:   #262a2f;
-  --accent: #86a8ff;
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --paper:   #fbfbfc;
+  --raised:  #f1f3f5;
+  --ink:     #14171a;
+  --ink-2:   #4a5058;
+  --ink-3:   #767d86;
+  --rule:    #e2e5e9;
+  /* Darker than the dark theme's accent: the same orange that reads clearly on
+     near-black fails contrast on near-white. */
+  --accent:  #9a4e05;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -99,7 +102,7 @@ a:hover { text-decoration-thickness: 2px; }
 .masthead {
   display: flex;
   align-items: baseline;
-  gap: 1rem;
+  gap: clamp(1rem, 3vw, 2.25rem);
   padding: 1.15rem var(--gutter);
   border-bottom: 1px solid var(--rule);
 }
@@ -114,7 +117,24 @@ a:hover { text-decoration-thickness: 2px; }
 }
 .brand:hover { color: var(--accent); }
 
-.masthead nav {
+/* The section list. Same data as the sidebar, one level up, so a reader can
+   cross between parts of the documentation without returning to the index. */
+.sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  font-size: var(--s-1);
+}
+.sections a {
+  color: var(--ink-2);
+  text-decoration: none;
+  padding-bottom: 0.15rem;
+  border-bottom: 2px solid transparent;
+}
+.sections a:hover { color: var(--ink); }
+.sections a[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
+
+.tools {
   margin-left: auto;
   display: flex;
   align-items: center;
@@ -123,20 +143,53 @@ a:hover { text-decoration-thickness: 2px; }
   font-size: var(--s-1);
 }
 
-.masthead nav a { color: var(--ink-2); text-decoration: none; }
-.masthead nav a:hover { color: var(--accent); text-decoration: underline; }
+.tools a { color: var(--ink-2); text-decoration: none; }
+.tools a:hover { color: var(--accent); text-decoration: underline; }
 
-.theme-toggle {
+.theme-toggle, .search-trigger {
   font: inherit;
   font-family: var(--mono);
   color: var(--ink-2);
   background: none;
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: 3px;
   padding: 0.15rem 0.5rem;
   cursor: pointer;
 }
-.theme-toggle:hover { color: var(--accent); border-color: currentColor; }
+.theme-toggle:hover, .search-trigger:hover { color: var(--accent); border-color: currentColor; }
+
+.search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 11rem;
+  text-align: left;
+}
+.search-trigger kbd {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+}
+
+/* ---------- breadcrumb ---------- */
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.9rem;
+}
+.crumbs a { color: var(--ink-3); text-decoration: none; }
+.crumbs a:hover { color: var(--accent); }
+.crumbs a + a::before { content: "/"; margin-right: 0.5rem; color: var(--rule); }
 
 /* ---------- layout ---------- */
 
@@ -230,6 +283,17 @@ main { min-width: 0; max-width: var(--measure); }
   letter-spacing: -0.04em;
   line-height: 1.15;
   margin: 0;
+}
+
+/* A short accent rule under the title. It is the one place the page states
+   "this is where you are" in colour rather than in words. */
+.title-block h1::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin-top: 0.7rem;
+  background: var(--accent);
 }
 
 .title-block .lede {
@@ -445,6 +509,8 @@ html[lang="ko"] .prose h4,
 html[lang="ko"] .sidebar > ul > li > a,
 html[lang="ko"] .toc::before,
 html[lang="ko"] .prose th,
+html[lang="ko"] .crumbs,
+html[lang="ko"] .search-crumb,
 html[lang="ko"] .prose .markdown-alert-title {
   font-family: var(--sans);
   letter-spacing: -0.01em;
@@ -455,6 +521,111 @@ html[lang="ko"] .prose h2,
 html[lang="ko"] .prose h3,
 html[lang="ko"] .prose h4 {
   font-weight: 700;
+}
+
+/* ---------- search palette ----------
+   A <dialog>. Escape, the backdrop, the focus trap and returning focus to the
+   trigger are all the element's own behaviour; none of it is written here. */
+
+.search-dialog {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 auto;
+  width: min(40rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: 100dvh;
+  margin-top: 12vh;
+}
+.search-dialog::backdrop { background: rgb(0 0 0 / 0.55); }
+
+.search-panel {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.35);
+  overflow: hidden;
+}
+
+.search-panel input {
+  width: 100%;
+  font: var(--s1)/1.4 var(--sans);
+  color: var(--ink);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  padding: 1rem 1.15rem;
+}
+.search-panel input:focus { outline: none; }
+.search-panel input::placeholder { color: var(--ink-3); }
+/* The UA's clear button for type=search is a heavy glyph that sits at a
+   different weight from everything else here. Escape already clears. */
+.search-panel input::-webkit-search-cancel-button { display: none; }
+
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  max-height: min(26rem, 55dvh);
+  overflow-y: auto;
+}
+.search-results:empty { display: none; }
+
+.search-results a {
+  display: block;
+  padding: 0.6rem 0.8rem;
+  border-radius: 5px;
+  color: inherit;
+  text-decoration: none;
+}
+.search-results a[aria-selected] { background: var(--raised); }
+.search-results a[aria-selected] .search-title { color: var(--accent); }
+
+.search-crumb {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.search-title {
+  display: block;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.search-snippet {
+  display: block;
+  font-size: var(--s-1);
+  line-height: 1.5;
+  color: var(--ink-2);
+  /* Two lines is enough to show why a page matched. More turns the list into
+     a wall and hides the results below it. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.search-results mark {
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.search-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--rule);
+  padding: 0.5rem 1.15rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+@media (max-width: 40rem) {
+  .search-trigger span { display: none; }
+  .search-trigger { min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

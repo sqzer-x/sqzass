@@ -210,6 +210,8 @@ pub struct PageCtx {
     pub translations: Vec<crate::site::LanguageLink>,
     /// 섹션 페이지의 직속 자식. 일반 페이지에서는 비어 있다.
     pub children: Vec<crate::site::PageRefCtx>,
+    /// 이 페이지가 속한 섹션. 최상위 페이지에는 없다 — 브레드크럼이 쓴다.
+    pub section: Option<crate::site::PageRefCtx>,
     /// 섹션 인덱스인지. 템플릿이 목록을 그릴지 판단한다.
     pub is_section: bool,
 }

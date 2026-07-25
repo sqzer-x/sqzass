@@ -6,9 +6,9 @@
 
 use crate::config::{HeadingAnchors, Markdown as MarkdownConfig};
 use comrak::adapters::{HeadingAdapter, HeadingMeta};
-use comrak::nodes::Sourcepos;
+use comrak::nodes::{AstNode, NodeValue, Sourcepos};
 use comrak::options::Plugins;
-use comrak::{Anchorizer, Options, markdown_to_html_with_plugins};
+use comrak::{Anchorizer, Arena, Options, format_html_with_plugins, parse_document};
 use serde::Serialize;
 use std::fmt;
 use std::sync::Mutex;
@@ -25,6 +25,9 @@ pub struct TocEntry {
 pub struct Rendered {
     pub html: String,
     pub toc: Vec<TocEntry>,
+    /// 검색 색인이 먹을 본문 평문. HTML을 벗겨 만드는 게 아니라 AST에서 모은다 —
+    /// 완성된 HTML에 정규식을 돌리지 않는다는 원칙은 여기에도 적용된다.
+    pub text: String,
     /// 해석하지 못한 `@/` 링크. 비어 있지 않으면 빌드를 멈춰야 한다 —
     /// 깨진 링크를 조용히 배포하는 건 이 도구가 막겠다고 한 바로 그 부류다.
     pub unresolved: Vec<String>,
@@ -105,13 +108,22 @@ impl Renderer {
             options.extension.image_url_rewriter = Some(r.clone());
         }
 
+        // 한 번만 파싱해서 HTML과 평문을 같은 트리에서 뽑는다. 링크 재작성기는
+        // 렌더 단계에서 도므로 평문 수집이 그 결과에 영향을 받지 않는다.
+        let arena = Arena::new();
+        let root = parse_document(&arena, body, &options);
+        let text = plain_text(root);
+
         let html = {
             let mut plugins = Plugins::default();
             plugins.render.heading_adapter = Some(&headings);
             if let Some(h) = &self.highlighter {
                 plugins.render.codefence_syntax_highlighter = Some(h);
             }
-            markdown_to_html_with_plugins(body, &options, &plugins)
+            let mut out = String::new();
+            format_html_with_plugins(root, &options, &mut out, &plugins)
+                .expect("String에 쓰는 건 실패하지 않는다");
+            out
         };
 
         let unresolved = resolver
@@ -122,9 +134,40 @@ impl Renderer {
         Rendered {
             unresolved,
             html,
+            text,
             toc: headings.into_toc(),
         }
     }
+}
+
+/// AST에서 검색용 평문을 모은다.
+///
+/// 코드 블록은 넣는다 — 문서 사이트에서 사람들은 명령어 이름으로 검색한다.
+/// front matter와 raw HTML은 뺀다: 전자는 메타데이터고 후자는 태그라 본문이 아니다.
+fn plain_text<'a>(root: &'a AstNode<'a>) -> String {
+    let mut out = String::new();
+    for node in root.descendants() {
+        match &node.data.borrow().value {
+            NodeValue::Text(t) => out.push_str(t),
+            // 인라인 코드는 앞뒤 Text가 이미 띄어쓰기를 갖고 있으므로 그대로 붙인다.
+            NodeValue::Code(c) => out.push_str(&c.literal),
+            NodeValue::CodeBlock(c) => {
+                out.push(' ');
+                out.push_str(&c.literal);
+            }
+            // 블록이 시작하는 자리마다 공백을 넣는다. 없으면 앞 블록의 끝과 다음
+            // 블록의 시작이 붙어 `빌드git` 같은, 문서에 없는 단어가 색인에 생긴다.
+            NodeValue::Paragraph
+            | NodeValue::Heading(_)
+            | NodeValue::Item(_)
+            | NodeValue::TableCell
+            | NodeValue::SoftBreak
+            | NodeValue::LineBreak => out.push(' '),
+            _ => {}
+        }
+    }
+    // 공백을 하나로 접는다. 인덱스가 커질 이유가 없다.
+    out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// heading에 id를 붙이고 anchor 링크를 그리면서, 동시에 목차를 모은다.
@@ -367,6 +410,39 @@ mod tests {
     fn heading_content_is_flattened_for_the_toc() {
         let r = renderer().render("## This is **bold**");
         assert_eq!(r.toc[0].title, "This is bold");
+    }
+
+    #[test]
+    fn plain_text_separates_blocks() {
+        // 블록 경계에 공백이 없으면 `빌드git` 같은, 문서 어디에도 없는 단어가
+        // 검색 색인에 생긴다. 부분 문자열로 찾는 색인에서는 그게 곧 오검색이다.
+        let r = renderer().render("## 소스에서 빌드\n\n```bash\ngit clone x\n```\n\n다음 단락.");
+        assert!(!r.text.contains("빌드git"), "블록이 붙었다: {}", r.text);
+        assert!(
+            r.text.contains("소스에서 빌드 git clone x"),
+            "실제: {}",
+            r.text
+        );
+        assert!(r.text.contains("다음 단락."), "실제: {}", r.text);
+    }
+
+    #[test]
+    fn plain_text_keeps_inline_code_attached() {
+        // 인라인 코드는 앞뒤 Text가 띄어쓰기를 갖고 있다. 여기에 공백을 더 넣으면
+        // 한국어 조사가 코드에서 떨어져 나가 `sqzass 에`가 된다.
+        let r = renderer().render("바이너리는 `target/release/sqzass`에 생긴다.");
+        assert!(
+            r.text.contains("target/release/sqzass에"),
+            "실제: {}",
+            r.text
+        );
+    }
+
+    #[test]
+    fn plain_text_has_no_markup() {
+        let r = renderer().render("## Title\n\nSome **bold** and a [link](https://example.com).");
+        assert!(!r.text.contains('<'), "태그가 남았다: {}", r.text);
+        assert!(r.text.contains("Some bold and a link."), "실제: {}", r.text);
     }
 
     #[test]

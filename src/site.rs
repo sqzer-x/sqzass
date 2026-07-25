@@ -72,19 +72,34 @@ impl<'a> Site<'a> {
             .unwrap_or(&[])
     }
 
-    /// 페이지가 속한 섹션의 `page_template`. 템플릿 선택 단계에서 쓴다.
-    pub fn page_template_for(&self, page: &Page) -> Option<&str> {
-        let dirs = page.rel.parent()?;
-        let dirs: Vec<String> = dirs
+    /// 페이지가 속한 섹션. 최상위 페이지는 소속 섹션이 없다.
+    fn section_of(&self, page: &Page) -> Option<&Section> {
+        let dirs: Vec<String> = page
+            .rel
+            .parent()?
             .components()
             .map(|c| c.as_os_str().to_string_lossy().into_owned())
             .collect();
         if dirs.is_empty() {
             return None;
         }
-        find_section(self.sections(&page.language), &dirs)?
-            .page_template
-            .as_deref()
+        find_section(self.sections(&page.language), &dirs)
+    }
+
+    /// 페이지가 속한 섹션의 `page_template`. 템플릿 선택 단계에서 쓴다.
+    pub fn page_template_for(&self, page: &Page) -> Option<&str> {
+        self.section_of(page)?.page_template.as_deref()
+    }
+
+    /// 페이지가 속한 섹션을 참조 형태로. 브레드크럼과 검색 결과의 갈래 라벨이 쓴다.
+    pub fn section_ref_of(&self, page: &Page) -> Option<PageRefCtx> {
+        let s = self.section_of(page)?;
+        Some(PageRefCtx {
+            title: s.title.clone(),
+            description: s.description.clone(),
+            url: s.url.clone(),
+            weight: s.weight,
+        })
     }
 
     /// `@/` 링크 해석용 표. translation_key → (언어 → URL)
