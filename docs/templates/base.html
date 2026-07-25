@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="{{ page.language }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
+{% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+<link rel="canonical" href="{{ page.permalink }}">
+</head>
+<body>
+{% include "partials/header.html" %}
+<main>
+{% block content %}{% endblock %}
+</main>
+{% include "partials/footer.html" %}
+</body>
+</html>

@@ -1,0 +1,38 @@
+title            = "sqzass"
+description      = "A static site generator written in Rust"
+base_url         = "https://sqzass.sqzer.com"
+default_language = "en"
+
+[languages.en]
+name   = "English"
+weight = 1
+
+[languages.ko]
+name   = "한국어"
+weight = 2
+
+[build]
+output_dir = "public"
+drafts     = false
+
+[markdown]
+footnotes             = true
+tables                = true
+tasklist              = true
+strikethrough         = true
+autolink              = true
+alerts                = true
+cjk_friendly_emphasis = true
+heading_anchors       = "right"
+
+[highlight]
+theme_light  = "InspiredGitHub"
+theme_dark   = "base16-ocean.dark"
+line_numbers = false
+
+[assets]
+source_dir  = "static"
+fingerprint = true
+
+[nav]
+sort_by = "weight"

@@ -1,0 +1,70 @@
+[package]
+name = "sqzass"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+description = "A static site generator written in Rust"
+repository = "https://github.com/devastator-x/sqzass"
+homepage = "https://sqzass.sqzer.com"
+readme = "README.md"
+keywords = ["static-site-generator", "ssg", "markdown", "blog", "cli"]
+categories = ["command-line-utilities", "web-programming"]
+
+[lib]
+name = "sqzass"
+path = "src/lib.rs"
+
+[[bin]]
+name = "sqzass"
+path = "src/main.rs"
+
+[dependencies]
+# --- M0 ---
+anyhow    = "1"
+clap      = { version = "4.6", features = ["derive"] }
+# ⚠️ comrak의 default = ["cli", "syntect-onig", "bon"] 이다. 그대로 쓰면
+#    (1) comrak 자체 CLI 의존성(clap/shell-words/xdg/fmt2io)이 딸려오고
+#    (2) syntect가 **Oniguruma(C 바인딩)**로 들어와 musl 정적 빌드/크로스컴파일이 깨진다.
+#    SyntaxHighlighterAdapter / HeadingAdapter 트레이트는 cfg 게이트가 없어 피처 없이도
+#    쓸 수 있고, 피처 뒤에 있는 건 comrak 내장 SyntectAdapter뿐인데 그건 우리가 직접
+#    구현하므로(업스트림 #330이 재작업 대상으로 지적) 필요 없다.
+comrak    = { version = "0.54", default-features = false }
+minijinja = "2.21"
+serde     = { version = "1", features = ["derive"] }
+toml      = "1.1"
+walkdir   = "2"
+
+# --- M1 (아래는 해당 기능 착수할 때 주석 해제) ---
+# syntect 기본 피처는 regex-onig(C 바인딩)이라 musl 정적 빌드/크로스컴파일이 깨진다.
+# default-fancy = 순수 Rust. 빌드 타임 작업이라 속도 차이는 무의미하다.
+# syntect  = { version = "5.3", default-features = false, features = ["default-fancy"] }
+# two-face는 syntect 기본 세트에 없는 TOML/TypeScript/Dockerfile을 채운다(문서 사이트 필수).
+# 피처를 안 맞추면 onig가 다시 딸려오므로 syntect-fancy를 반드시 명시할 것.
+# two-face = { version = "0.5", default-features = false, features = ["syntect-fancy"] }
+# blake3   = "1"                                    # 에셋 콘텐츠 해시
+# axum     = "0.8"                                  # 개발 서버
+# tower-http = { version = "0.7", features = ["fs"] }
+# tokio    = { version = "1", features = ["rt-multi-thread", "macros"] }
+# notify   = "8.2"                                  # 9.0은 6개월째 RC. 8.2 + debouncer 0.7은
+# notify-debouncer-full = "0.7"                     #   버전 락 쌍이라 섞지 말 것
+
+# --- M3 ---
+# pagefind 기본 피처 serve가 actix-web + actix-files를 끌고 온다. 반드시 끌 것.
+# pagefind = { version = "1.5", default-features = false, features = ["extended"], optional = true }
+
+# --- M3 이후 ---
+# rayon = "1"   # 병렬 렌더. 문서 사이트 ~60페이지엔 불필요하고, 출력 URL 충돌 시
+#               # 비결정성 문제를 같이 떠안게 된다. 페이지가 수백 개가 되면 그때.
+
+[dev-dependencies]
+insta = "1"
+
+[features]
+default = []
+# search = ["dep:pagefind"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

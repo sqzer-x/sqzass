@@ -1,0 +1,7 @@
+/target
+/docs/public
+**/*.rs.bk
+*.pdb
+
+# insta 스냅샷 리뷰 대기 파일
+**/*.snap.new

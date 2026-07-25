@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{# 자식 페이지 목록은 섹션 트리가 들어오는 M1에서 붙는다. #}
+{% block content %}
+<article>
+  <h1>{{ page.title }}</h1>
+  {{ page.content | safe }}
+</article>
+{% endblock %}
