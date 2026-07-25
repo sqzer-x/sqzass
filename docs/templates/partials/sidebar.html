@@ -1,0 +1,19 @@
+{# 섹션 트리를 재귀적으로 그린다. site.sections는 현재 언어의 것만 담겨 있으므로
+   미번역 페이지는 애초에 여기 없다 — 죽은 링크가 생길 수 없다. #}
+{% macro nav(sections, current) %}
+<ul>
+  {%- for s in sections %}
+  <li>
+    <a href="{{ s.url }}"{% if s.url == current %} aria-current="page"{% endif %}>{{ s.title }}</a>
+    {%- if s.pages or s.subsections %}
+    <ul>
+      {%- for p in s.pages %}
+      <li><a href="{{ p.url }}"{% if p.url == current %} aria-current="page"{% endif %}>{{ p.title }}</a></li>
+      {%- endfor %}
+      {%- if s.subsections %}{{ nav(s.subsections, current) }}{% endif %}
+    </ul>
+    {%- endif %}
+  </li>
+  {%- endfor %}
+</ul>
+{% endmacro %}

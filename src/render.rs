@@ -1,7 +1,7 @@
 //! minijinja 템플릿 환경과 렌더 컨텍스트.
 
 use anyhow::{Context, Result, bail};
-use minijinja::{Environment, UndefinedBehavior, Value};
+use minijinja::{AutoEscape, Environment, Output, State, UndefinedBehavior, Value};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -88,6 +88,7 @@ impl Templates {
         // 만드는데, front matter의 선택적 필드를 존재 검사하는 게 SSG 템플릿의
         // 일상이라 쓸 수 없다. SemiStrict는 undefined의 출력/순회/속성 접근만 막는다.
         env.set_undefined_behavior(UndefinedBehavior::SemiStrict);
+        env.set_formatter(format_value);
 
         Ok(Self { env, names })
     }
@@ -110,24 +111,58 @@ impl Templates {
     }
 }
 
-// ⚠️ 알려진 결함 (M1에서 수정): minijinja의 HTML 이스케이퍼는 `/`를 `&#x2f;`로 바꾼다
-// (utils.rs의 `b'/' => "&#x2f;"`, OWASP식 보수적 이스케이핑). `v_htmlescape` 피처로
-// 바꿔봤지만 그쪽도 `/`를 이스케이프하므로 우회가 안 된다.
-//
-// 결과: 모든 URL이 `href="https:&#x2f;&#x2f;..."` 로 나간다. 유효한 HTML이고 브라우저와
-// 제대로 된 파서는 디코드하지만, 출력물이 지저분하다.
-//
-// 제대로 된 해법은 URL을 일반 텍스트 이스케이퍼에 태우지 않는 것이다. URL 속성값에
-// 필요한 이스케이프는 `& " < >` 넷뿐이다. 컨텍스트의 URL 필드를 String이 아니라
-// `Value::from_safe_string(직접_이스케이프한_값)`으로 넘기면 된다 — 다만 그러려면
-// 컨텍스트를 Serialize 구조체가 아니라 Value로 조립해야 하므로, 내부 링크를 루트
-// 절대화하는 M1 작업과 함께 처리한다.
+/// HTML 이스케이프. minijinja 기본 이스케이퍼와 딱 한 곳이 다르다: **`/`를 건드리지
+/// 않는다.**
+///
+/// minijinja는 `/`를 `&#x2f;`로 바꾼다(`utils.rs`의 `b'/' => "&#x2f;"`). OWASP식
+/// belt-and-braces 조치인데, 노리는 건 `</script>` 탈출이고 그건 `<`를 이스케이프하는
+/// 것으로 이미 막힌다. 대가는 사이트의 **모든 URL**이 `href="https:&#x2f;&#x2f;…"`로
+/// 나가는 것이다. 유효한 HTML이고 브라우저는 디코드하지만 출력물을 읽을 수 없게 만든다.
+///
+/// 참고로 **Jinja2 본가의 `escape()`도 `/`를 이스케이프하지 않는다.** 이 포매터는
+/// minijinja를 원본 Jinja2 의미론 쪽으로 되돌리는 것이다.
+///
+/// (`v_htmlescape` 피처도 시도했으나 그쪽 역시 `/`를 이스케이프해서 우회가 안 됐다.)
+fn write_html_escaped(out: &mut Output, s: &str) -> Result<(), minijinja::Error> {
+    let mut last = 0;
+    for (i, ch) in s.char_indices() {
+        let repl = match ch {
+            '&' => "&amp;",
+            '<' => "&lt;",
+            '>' => "&gt;",
+            '"' => "&quot;",
+            '\'' => "&#x27;",
+            _ => continue,
+        };
+        out.write_str(&s[last..i])?;
+        out.write_str(repl)?;
+        last = i + ch.len_utf8();
+    }
+    out.write_str(&s[last..])?;
+    Ok(())
+}
+
+fn format_value(out: &mut Output, state: &State, value: &Value) -> Result<(), minijinja::Error> {
+    // 이미 safe로 표시된 값과 HTML이 아닌 이스케이프 모드(.txt, .json)는
+    // 기본 동작에 맡긴다. 문자열이 아닌 값도 마찬가지 — 이스케이프할 게 없다.
+    if state.auto_escape() == AutoEscape::Html
+        && !value.is_safe()
+        && let Some(s) = value.as_str()
+    {
+        return write_html_escaped(out, s);
+    }
+    minijinja::escape_formatter(out, state, value)
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct SiteCtx {
     pub title: String,
     pub description: String,
     pub base_url: String,
+    /// 지금 렌더 중인 페이지의 언어.
     pub language: String,
+    /// 이 언어의 최상위 섹션들. 사이드바는 여기서 만든다.
+    pub sections: Vec<crate::site::SectionCtx>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -142,6 +177,8 @@ pub struct PageCtx {
     pub draft: bool,
     pub toc: bool,
     pub language: String,
+    /// 다른 언어판. **번역이 실제로 있을 때만** 채워진다.
+    pub translations: Vec<crate::site::LanguageLink>,
 }
 
 #[cfg(test)]
@@ -227,6 +264,53 @@ mod tests {
             )
             .unwrap();
         assert!(!out.contains("<script>"), "이스케이프되지 않았다: {out}");
+    }
+
+    #[test]
+    fn urls_keep_their_slashes() {
+        // minijinja 기본 이스케이퍼는 `/`를 `&#x2f;`로 바꿔서 사이트의 모든 링크를
+        // 읽을 수 없게 만든다. 커스텀 포매터로 되돌린 것을 고정한다.
+        let site = Site::new("slash", &[("page.html", r#"<a href="{{ page.url }}">x</a>"#)]);
+        let out = site
+            .templates()
+            .render(
+                "page.html",
+                context! { page => context!{ url => "https://sqzass.sqzer.com/ko/start/" } },
+            )
+            .unwrap();
+        assert_eq!(out, r#"<a href="https://sqzass.sqzer.com/ko/start/">x</a>"#);
+    }
+
+    #[test]
+    fn dangerous_characters_are_still_escaped() {
+        // `/`만 빼고 나머지는 그대로 이스케이프되어야 한다. 이게 깨지면 XSS다.
+        let site = Site::new("danger", &[("page.html", "{{ page.t }}")]);
+        let t = site.templates();
+        for (input, expected) in [
+            ("<script>", "&lt;script&gt;"),
+            ("a & b", "a &amp; b"),
+            ("say \"hi\"", "say &quot;hi&quot;"),
+            ("it's", "it&#x27;s"),
+            ("</script><img onerror=x>", "&lt;/script&gt;&lt;img onerror=x&gt;"),
+        ] {
+            let out = t
+                .render("page.html", context! { page => context!{ t => input } })
+                .unwrap();
+            assert_eq!(out, expected, "입력: {input}");
+        }
+    }
+
+    #[test]
+    fn safe_values_bypass_the_custom_formatter() {
+        let site = Site::new("safebypass", &[("page.html", "{{ page.c | safe }}")]);
+        let out = site
+            .templates()
+            .render(
+                "page.html",
+                context! { page => context!{ c => "<p>a &amp; b</p>" } },
+            )
+            .unwrap();
+        assert_eq!(out, "<p>a &amp; b</p>");
     }
 
     #[test]

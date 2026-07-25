@@ -1,0 +1,482 @@
+//! 페이지 목록을 섹션 트리로 조립하고, 언어별 내비게이션과 번역 연결을 만든다.
+//!
+//! 트리는 **언어별로 따로** 만든다. 미번역 페이지는 해당 언어 트리에 아예 존재하지
+//! 않으므로, 사이드바에 죽은 링크가 생기지 않는다.
+
+use crate::config::{Config, SortBy};
+use crate::content::Page;
+use serde::Serialize;
+use std::collections::BTreeMap;
+
+/// 언어별 섹션 트리 + 번역 색인.
+pub struct Site<'a> {
+    pub cfg: &'a Config,
+    pub pages: &'a [Page],
+    /// 언어 코드 → 최상위 섹션들
+    trees: BTreeMap<String, Vec<Section>>,
+    /// translation_key → (언어 코드 → 페이지 인덱스)
+    translations: BTreeMap<String, BTreeMap<String, usize>>,
+}
+
+/// 내부 트리 노드. 페이지는 인덱스로 참조해 소유권 문제를 피한다.
+#[derive(Debug, Clone)]
+pub struct Section {
+    pub title: String,
+    pub description: String,
+    pub url: String,
+    pub weight: i64,
+    /// `content/` 기준 디렉터리 경로 (언어 접두사 제외)
+    pub path: Vec<String>,
+    /// 이 섹션의 `_index.md`
+    pub index: Option<usize>,
+    /// 직속 자식 페이지 (정렬됨)
+    pub pages: Vec<usize>,
+    pub subsections: Vec<Section>,
+    /// `_index.md`의 `page_template` — 자식 페이지의 기본 템플릿
+    pub page_template: Option<String>,
+}
+
+impl<'a> Site<'a> {
+    pub fn build(pages: &'a [Page], cfg: &'a Config) -> Self {
+        let mut translations: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
+        for (i, p) in pages.iter().enumerate() {
+            translations
+                .entry(p.translation_key.clone())
+                .or_default()
+                .insert(p.language.clone(), i);
+        }
+
+        let mut by_lang: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+        for (i, p) in pages.iter().enumerate() {
+            by_lang.entry(p.language.clone()).or_default().push(i);
+        }
+
+        let trees = by_lang
+            .into_iter()
+            .map(|(lang, idxs)| (lang, build_tree(pages, &idxs, cfg)))
+            .collect();
+
+        Self { cfg, pages, trees, translations }
+    }
+
+    /// 해당 언어의 최상위 섹션들.
+    pub fn sections(&self, language: &str) -> &[Section] {
+        self.trees.get(language).map(|v| v.as_slice()).unwrap_or(&[])
+    }
+
+    /// 페이지가 속한 섹션의 `page_template`. 템플릿 선택 단계에서 쓴다.
+    pub fn page_template_for(&self, page: &Page) -> Option<&str> {
+        let dirs = page.rel.parent()?;
+        let dirs: Vec<String> = dirs
+            .components()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .collect();
+        if dirs.is_empty() {
+            return None;
+        }
+        find_section(self.sections(&page.language), &dirs)?
+            .page_template
+            .as_deref()
+    }
+
+    /// 이 페이지의 다른 언어판. **번역이 실제로 있는 것만** 담는다.
+    pub fn translations_of(&self, page: &Page) -> Vec<LanguageLink> {
+        let Some(by_lang) = self.translations.get(&page.translation_key) else {
+            return Vec::new();
+        };
+        let mut out: Vec<LanguageLink> = by_lang
+            .iter()
+            .filter(|(code, _)| code.as_str() != page.language)
+            .filter_map(|(code, &idx)| {
+                let lang = self.cfg.languages.get(code)?;
+                Some(LanguageLink {
+                    code: code.clone(),
+                    name: lang.name.clone(),
+                    url: self.pages[idx].url.clone(),
+                    weight: lang.weight,
+                })
+            })
+            .collect();
+        out.sort_by_key(|l| (l.weight, l.code.clone()));
+        out
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LanguageLink {
+    pub code: String,
+    pub name: String,
+    pub url: String,
+    #[serde(skip)]
+    pub weight: i64,
+}
+
+/// 한 언어의 페이지들로 섹션 트리를 만든다.
+fn build_tree(pages: &[Page], idxs: &[usize], cfg: &Config) -> Vec<Section> {
+    // 디렉터리 경로 → 섹션. 루트는 빈 경로.
+    let mut root = Section {
+        title: String::new(),
+        description: String::new(),
+        url: "/".into(),
+        weight: 0,
+        path: Vec::new(),
+        index: None,
+        pages: Vec::new(),
+        subsections: Vec::new(),
+        page_template: None,
+    };
+
+    // 1) 섹션 노드부터 만든다 (`_index.md` 기준)
+    for &i in idxs {
+        let p = &pages[i];
+        if !p.is_section {
+            continue;
+        }
+        let dirs = dirs_of(p);
+        let node = ensure_section(&mut root, &dirs);
+        node.index = Some(i);
+        node.title = p.title.clone();
+        node.description = p.front.description.clone();
+        node.url = p.url.clone();
+        node.weight = p.front.weight;
+        node.page_template = p.front.page_template.clone();
+    }
+
+    // 2) 일반 페이지를 붙인다. `_index.md`가 없는 디렉터리도 섹션으로 승격시킨다 —
+    //    없으면 페이지가 트리에서 사라져 사이드바에 안 나온다.
+    for &i in idxs {
+        let p = &pages[i];
+        if p.is_section {
+            continue;
+        }
+        let dirs = dirs_of(p);
+        let node = ensure_section(&mut root, &dirs);
+        node.pages.push(i);
+    }
+
+    sort_section(&mut root, pages, cfg);
+    root.subsections
+}
+
+/// `content/` 기준 디렉터리 세그먼트.
+fn dirs_of(p: &Page) -> Vec<String> {
+    p.rel
+        .parent()
+        .map(|d| {
+            d.components()
+                .map(|c| c.as_os_str().to_string_lossy().into_owned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// 경로를 따라 내려가며 없으면 만든다.
+fn ensure_section<'s>(root: &'s mut Section, dirs: &[String]) -> &'s mut Section {
+    let mut cur = root;
+    for (depth, seg) in dirs.iter().enumerate() {
+        let pos = cur.subsections.iter().position(|s| s.path.last() == Some(seg));
+        let pos = match pos {
+            Some(p) => p,
+            None => {
+                let mut path = cur.path.clone();
+                path.push(seg.clone());
+                cur.subsections.push(Section {
+                    // `_index.md`가 없으면 디렉터리 이름을 제목으로 쓴다.
+                    title: seg.clone(),
+                    description: String::new(),
+                    url: format!("/{}/", path.join("/")),
+                    weight: 0,
+                    path,
+                    index: None,
+                    pages: Vec::new(),
+                    subsections: Vec::new(),
+                    page_template: None,
+                });
+                let _ = depth;
+                cur.subsections.len() - 1
+            }
+        };
+        cur = &mut cur.subsections[pos];
+    }
+    cur
+}
+
+fn find_section<'s>(sections: &'s [Section], dirs: &[String]) -> Option<&'s Section> {
+    let (first, rest) = dirs.split_first()?;
+    let node = sections.iter().find(|s| s.path.last() == Some(first))?;
+    if rest.is_empty() { Some(node) } else { find_section(&node.subsections, rest) }
+}
+
+/// 섹션 자신의 `sort_by`가 있으면 그걸, 없으면 `[nav] sort_by`를 쓴다.
+fn sort_section(sec: &mut Section, pages: &[Page], cfg: &Config) {
+    let sort_by = sec
+        .index
+        .and_then(|i| pages[i].front.sort_by)
+        .unwrap_or(cfg.nav.sort_by);
+
+    let key = |i: &usize| -> (i64, String) {
+        let p = &pages[*i];
+        match sort_by {
+            SortBy::Weight => (p.front.weight, p.title.clone()),
+            SortBy::Title => (0, p.title.clone()),
+        }
+    };
+    sec.pages.sort_by_key(key);
+
+    sec.subsections.sort_by_key(|s| match sort_by {
+        SortBy::Weight => (s.weight, s.title.clone()),
+        SortBy::Title => (0, s.title.clone()),
+    });
+
+    for sub in &mut sec.subsections {
+        sort_section(sub, pages, cfg);
+    }
+}
+
+// --- 템플릿 컨텍스트 ---
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SectionCtx {
+    pub title: String,
+    pub description: String,
+    pub url: String,
+    pub weight: i64,
+    pub pages: Vec<PageRefCtx>,
+    pub subsections: Vec<SectionCtx>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct PageRefCtx {
+    pub title: String,
+    pub description: String,
+    pub url: String,
+    pub weight: i64,
+}
+
+pub fn section_ctx(sections: &[Section], pages: &[Page]) -> Vec<SectionCtx> {
+    sections
+        .iter()
+        .map(|s| SectionCtx {
+            title: s.title.clone(),
+            description: s.description.clone(),
+            url: s.url.clone(),
+            weight: s.weight,
+            pages: s
+                .pages
+                .iter()
+                .map(|&i| PageRefCtx {
+                    title: pages[i].title.clone(),
+                    description: pages[i].front.description.clone(),
+                    url: pages[i].url.clone(),
+                    weight: pages[i].front.weight,
+                })
+                .collect(),
+            subsections: section_ctx(&s.subsections, pages),
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::content;
+    use std::path::{Path, PathBuf};
+
+    fn cfg() -> Config {
+        toml::from_str(
+            r#"
+            title = "t"
+            base_url = "https://example.com"
+            default_language = "en"
+            [languages.en]
+            name = "English"
+            weight = 1
+            [languages.ko]
+            name = "한국어"
+            weight = 2
+            "#,
+        )
+        .unwrap()
+    }
+
+    /// 임시 사이트를 만들고 discover까지 돌린다.
+    struct Fixture(PathBuf);
+
+    impl Fixture {
+        fn new(name: &str, files: &[(&str, &str)]) -> Self {
+            let root =
+                std::env::temp_dir().join(format!("sqzass-site-{}-{name}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&root);
+            for (rel, body) in files {
+                let path = root.join("content").join(rel);
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(path, body).unwrap();
+            }
+            Self(root)
+        }
+        fn pages(&self, cfg: &Config) -> Vec<Page> {
+            content::discover(&self.0, cfg, false).unwrap()
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn fm(title: &str, extra: &str) -> String {
+        format!("+++\ntitle = \"{title}\"\n{extra}+++\n\nbody\n")
+    }
+
+    #[test]
+    fn builds_nested_sections_per_language() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "tree",
+            &[
+                ("_index.md", &fm("Home", "")),
+                ("_index.ko.md", &fm("홈", "")),
+                ("start/_index.md", &fm("Getting started", "weight = 10\n")),
+                ("start/_index.ko.md", &fm("시작하기", "weight = 10\n")),
+                ("start/install.md", &fm("Install", "weight = 1\n")),
+                ("start/install.ko.md", &fm("설치", "weight = 1\n")),
+                ("start/first.md", &fm("First site", "weight = 2\n")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+
+        let en = site.sections("en");
+        assert_eq!(en.len(), 1, "최상위 섹션은 start 하나여야 한다");
+        assert_eq!(en[0].title, "Getting started");
+        assert_eq!(en[0].url, "/start/");
+        assert_eq!(en[0].pages.len(), 2);
+
+        let ko = site.sections("ko");
+        assert_eq!(ko.len(), 1);
+        assert_eq!(ko[0].title, "시작하기");
+        assert_eq!(ko[0].url, "/ko/start/");
+        // 한국어판은 install만 번역돼 있다
+        assert_eq!(ko[0].pages.len(), 1, "미번역 페이지가 트리에 새어들어왔다");
+    }
+
+    #[test]
+    fn sorts_pages_by_weight_then_title() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "sort",
+            &[
+                ("docs/_index.md", &fm("Docs", "")),
+                ("docs/c.md", &fm("C", "weight = 1\n")),
+                ("docs/a.md", &fm("A", "weight = 3\n")),
+                ("docs/b.md", &fm("B", "weight = 2\n")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let titles: Vec<&str> = site.sections("en")[0]
+            .pages
+            .iter()
+            .map(|&i| pages[i].title.as_str())
+            .collect();
+        assert_eq!(titles, vec!["C", "B", "A"]);
+    }
+
+    #[test]
+    fn section_sort_by_overrides_global() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "sortoverride",
+            &[
+                ("docs/_index.md", &fm("Docs", "sort_by = \"title\"\n")),
+                ("docs/c.md", &fm("C", "weight = 1\n")),
+                ("docs/a.md", &fm("A", "weight = 3\n")),
+                ("docs/b.md", &fm("B", "weight = 2\n")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let titles: Vec<&str> = site.sections("en")[0]
+            .pages
+            .iter()
+            .map(|&i| pages[i].title.as_str())
+            .collect();
+        assert_eq!(titles, vec!["A", "B", "C"], "섹션의 sort_by가 전역을 못 이겼다");
+    }
+
+    #[test]
+    fn directory_without_index_still_appears() {
+        // `_index.md`를 깜빡해도 페이지가 사이드바에서 사라지면 안 된다.
+        let cfg = cfg();
+        let f = Fixture::new(
+            "noindex",
+            &[("guides/howto.md", &fm("How to", ""))],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let en = site.sections("en");
+        assert_eq!(en.len(), 1);
+        assert_eq!(en[0].title, "guides", "디렉터리 이름이 제목 대체값이어야 한다");
+        assert_eq!(en[0].pages.len(), 1);
+    }
+
+    #[test]
+    fn translations_only_include_existing_ones() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "trans",
+            &[
+                ("a.md", &fm("A", "")),
+                ("a.ko.md", &fm("가", "")),
+                ("b.md", &fm("B", "")), // 번역 없음
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+
+        let a = pages.iter().find(|p| p.title == "A").unwrap();
+        let t = site.translations_of(a);
+        assert_eq!(t.len(), 1);
+        assert_eq!(t[0].code, "ko");
+        assert_eq!(t[0].url, "/ko/a/");
+        assert_eq!(t[0].name, "한국어");
+
+        let b = pages.iter().find(|p| p.title == "B").unwrap();
+        assert!(
+            site.translations_of(b).is_empty(),
+            "번역이 없는데 언어 링크가 생겼다"
+        );
+    }
+
+    #[test]
+    fn page_template_comes_from_parent_section() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "ptmpl",
+            &[
+                ("docs/_index.md", &fm("Docs", "page_template = \"doc.html\"\n")),
+                ("docs/x.md", &fm("X", "")),
+                ("other.md", &fm("Other", "")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let x = pages.iter().find(|p| p.title == "X").unwrap();
+        assert_eq!(site.page_template_for(x), Some("doc.html"));
+        let o = pages.iter().find(|p| p.title == "Other").unwrap();
+        assert_eq!(site.page_template_for(o), None);
+    }
+
+    #[test]
+    fn anchorizer_passes_hangul_through() {
+        // 계획 단계에서 "착수 즉시 확인"으로 표시했던 항목. 한글이 버려지면
+        // 모든 한국어 제목의 id가 충돌해 TOC와 anchor가 붕괴한다.
+        let mut a = comrak::Anchorizer::new();
+        assert_eq!(a.anchorize("설치"), "설치");
+        assert_eq!(a.anchorize("정적 사이트 생성기"), "정적-사이트-생성기");
+        assert_eq!(a.anchorize("설치"), "설치-1", "중복 제목 dedupe가 동작해야 한다");
+        assert_eq!(a.anchorize("한글 제목 with English"), "한글-제목-with-english");
+        let _ = Path::new("");
+    }
+}

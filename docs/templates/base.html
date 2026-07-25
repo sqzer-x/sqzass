@@ -1,17 +1,31 @@
+{% from "partials/sidebar.html" import nav %}
 <!doctype html>
 <html lang="{{ page.language }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
+<title>{% if page.url == "/" or page.url == "/" ~ page.language ~ "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
 {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
 <link rel="canonical" href="{{ page.permalink }}">
+{%- for t in page.translations %}
+<link rel="alternate" hreflang="{{ t.code }}" href="{{ site.base_url }}{{ t.url }}">
+{%- endfor %}
 </head>
 <body>
+<a href="#content" class="skip">Skip to content</a>
+
 {% include "partials/header.html" %}
-<main>
+
+<div class="layout">
+  <aside class="sidebar" aria-label="Documentation">
+    {{ nav(site.sections, page.url) }}
+  </aside>
+
+  <main id="content">
 {% block content %}{% endblock %}
-</main>
+  </main>
+</div>
+
 {% include "partials/footer.html" %}
 </body>
 </html>

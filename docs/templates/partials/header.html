@@ -1,3 +1,4 @@
 <header>
-  <a href="{{ site.base_url }}/">{{ site.title }}</a>
+  <a href="{% if page.language == "en" %}/{% else %}/{{ page.language }}/{% endif %}" class="brand">{{ site.title }}</a>
+  {% include "partials/lang-switch.html" %}
 </header>
