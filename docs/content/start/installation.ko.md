@@ -25,8 +25,25 @@ cargo build --release
 | Rust | 1.97 이상 |
 | 그 외 | — |
 
+## 미리 빌드된 바이너리
+
+[릴리스](https://github.com/sqzer-x/sqzass/releases)마다 정적 링크된
+`x86_64-unknown-linux-musl` 빌드와 `aarch64-apple-darwin` 빌드가 붙습니다. 각각
+`.sha256`이 옆에 있습니다.
+
+```bash
+curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-v0.1.0-x86_64-unknown-linux-musl.tar.gz
+tar xzf sqzass-*.tar.gz
+sudo install -m755 sqzass-*/sqzass /usr/local/bin/
+```
+
+리눅스 빌드는 정적이라 glibc를 요구하지 않고, 빌드한 배포판보다 오래된 배포판에서도
+돕니다. 이 프로젝트가 syntect를 순수 Rust 정규식 엔진으로 고정한 이유가 이것입니다.
+기본값은 C 바인딩이고, C 바인딩은 정확히 musl 정적 빌드를 깨뜨립니다.
+
 > [!NOTE]
-> 미리 빌드된 바이너리와 AUR 패키지는 계획에 있지만 아직 배포하지 않았습니다.
+> 아직 릴리스가 없습니다 — 워크플로는 있고 첫 태그를 아직 붙이지 않았습니다.
+> 그때까지는 소스에서 빌드하세요.
 
 ## 설치 확인
 
