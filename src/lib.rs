@@ -4,6 +4,7 @@ pub mod assets;
 pub mod config;
 pub mod content;
 pub mod highlight;
+pub mod links;
 pub mod markdown;
 pub mod render;
 pub mod serve;
@@ -71,7 +72,8 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
     // 에셋을 먼저 처리해야 템플릿이 해시가 붙은 최종 URL을 조회할 수 있다.
     let mut assets = assets::Assets::collect(root, &cfg.assets)?;
 
-    let mut md = markdown::Renderer::new(&cfg.markdown);
+    let mut md =
+        markdown::Renderer::new(&cfg.markdown).with_links(site.link_index(), &cfg.default_language);
     let highlight_css_url = if cfg.highlight.enabled {
         md = md.with_highlighter(highlight::Highlighter::new());
         // 하이라이트 스타일시트는 테마에서 생성한다. HTML은 클래스만 담고 있으므로
@@ -166,7 +168,15 @@ fn render_page(
         highlight_css: highlight_css.map(str::to_string),
     };
 
-    let rendered = md.render(&page.body);
+    let rendered = md.render_in(&page.language, &page.body);
+    if !rendered.unresolved.is_empty() {
+        anyhow::bail!(
+            "{}: 해석할 수 없는 내부 링크가 있습니다:\n  {}\n\
+             `@/` 는 content/ 기준 소스 경로를 가리켜야 합니다 (예: `@/start/installation.md`).",
+            page.source.display(),
+            rendered.unresolved.join("\n  ")
+        );
+    }
 
     let page_ctx = PageCtx {
         title: page.title.clone(),
@@ -183,6 +193,8 @@ fn render_page(
         // 번역이 실제로 있는 언어만 담긴다 — 템플릿은 이게 비었는지로
         // 언어 전환 UI를 보일지 결정하면 된다.
         translations: site.translations_of(page),
+        children: site.children_of(page),
+        is_section: page.is_section,
     };
 
     templates

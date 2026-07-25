@@ -208,6 +208,10 @@ pub struct PageCtx {
     pub language: String,
     /// 다른 언어판. **번역이 실제로 있을 때만** 채워진다.
     pub translations: Vec<crate::site::LanguageLink>,
+    /// 섹션 페이지의 직속 자식. 일반 페이지에서는 비어 있다.
+    pub children: Vec<crate::site::PageRefCtx>,
+    /// 섹션 인덱스인지. 템플릿이 목록을 그릴지 판단한다.
+    pub is_section: bool,
 }
 
 #[cfg(test)]

@@ -25,11 +25,16 @@ pub struct TocEntry {
 pub struct Rendered {
     pub html: String,
     pub toc: Vec<TocEntry>,
+    /// 해석하지 못한 `@/` 링크. 비어 있지 않으면 빌드를 멈춰야 한다 —
+    /// 깨진 링크를 조용히 배포하는 건 이 도구가 막겠다고 한 바로 그 부류다.
+    pub unresolved: Vec<String>,
 }
 
 pub struct Renderer {
     cfg: MarkdownConfig,
     highlighter: Option<crate::highlight::Highlighter>,
+    links: Option<crate::links::LinkIndex>,
+    default_language: String,
 }
 
 impl Renderer {
@@ -37,12 +42,21 @@ impl Renderer {
         Self {
             cfg: cfg.clone(),
             highlighter: None,
+            links: None,
+            default_language: "en".into(),
         }
     }
 
     /// 구문 강조를 켠다. 없으면 코드 블록은 `<code class="language-x">`로만 나간다.
     pub fn with_highlighter(mut self, h: crate::highlight::Highlighter) -> Self {
         self.highlighter = Some(h);
+        self
+    }
+
+    /// `@/path.md` 내부 링크 해석을 켠다.
+    pub fn with_links(mut self, index: crate::links::LinkIndex, default_language: &str) -> Self {
+        self.links = Some(index);
+        self.default_language = default_language.to_string();
         self
     }
 
@@ -68,11 +82,28 @@ impl Renderer {
     }
 
     pub fn render(&self, body: &str) -> Rendered {
+        self.render_in("en", body)
+    }
+
+    /// `language`는 `@/` 링크를 어느 언어판으로 보낼지 정한다.
+    pub fn render_in(&self, language: &str, body: &str) -> Rendered {
         // 어댑터는 `Options`가 아니라 `Plugins`에 붙는다. 페이지마다 새 collector를
         // 쓰는 게 중요하다 — heading id는 사이트가 아니라 **페이지 안에서** 유일해야
         // 하므로 anchorizer의 dedupe 카운터도 페이지마다 초기화되어야 한다.
         let headings = HeadingCollector::new(self.cfg.heading_anchors);
-        let options = self.options();
+        let mut options = self.options();
+
+        let resolver = self.links.as_ref().map(|index| {
+            std::sync::Arc::new(crate::links::Resolver::new(
+                index.clone(),
+                language,
+                &self.default_language,
+            ))
+        });
+        if let Some(r) = &resolver {
+            options.extension.link_url_rewriter = Some(r.clone());
+            options.extension.image_url_rewriter = Some(r.clone());
+        }
 
         let html = {
             let mut plugins = Plugins::default();
@@ -83,7 +114,13 @@ impl Renderer {
             markdown_to_html_with_plugins(body, &options, &plugins)
         };
 
+        let unresolved = resolver
+            .as_ref()
+            .map(|r| r.take_unresolved())
+            .unwrap_or_default();
+
         Rendered {
+            unresolved,
             html,
             toc: headings.into_toc(),
         }

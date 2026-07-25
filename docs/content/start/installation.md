@@ -20,10 +20,10 @@ The binary lands at `target/release/sqzass`.
 
 ## Requirements
 
-| | |
+| Requirement | Version |
 |---|---|
 | Rust | 1.97 or newer |
-| Everything else | nothing |
+| Everything else | — |
 
 > [!NOTE]
 > Prebuilt binaries and an AUR package are planned but not published yet.

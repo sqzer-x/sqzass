@@ -87,6 +87,72 @@ impl<'a> Site<'a> {
             .as_deref()
     }
 
+    /// `@/` 링크 해석용 표. translation_key → (언어 → URL)
+    pub fn link_index(&self) -> crate::links::LinkIndex {
+        self.translations
+            .iter()
+            .map(|(key, by_lang)| {
+                let urls = by_lang
+                    .iter()
+                    .map(|(lang, &i)| (lang.clone(), self.pages[i].url.clone()))
+                    .collect();
+                (key.clone(), urls)
+            })
+            .collect()
+    }
+
+    /// 섹션 인덱스 페이지의 직속 자식들. 섹션 페이지가 자기 하위 목록을 보여줄 때 쓴다.
+    pub fn children_of(&self, page: &Page) -> Vec<PageRefCtx> {
+        if !page.is_section {
+            return Vec::new();
+        }
+        let dirs: Vec<String> = page
+            .rel
+            .parent()
+            .map(|d| {
+                d.components()
+                    .map(|c| c.as_os_str().to_string_lossy().into_owned())
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let sections = self.sections(&page.language);
+        // 루트 `_index.md`의 자식은 최상위 섹션들이다.
+        let Some(node) = (if dirs.is_empty() {
+            None
+        } else {
+            find_section(sections, &dirs)
+        }) else {
+            return sections
+                .iter()
+                .map(|s| PageRefCtx {
+                    title: s.title.clone(),
+                    description: s.description.clone(),
+                    url: s.url.clone(),
+                    weight: s.weight,
+                })
+                .collect();
+        };
+
+        let mut out: Vec<PageRefCtx> = node
+            .pages
+            .iter()
+            .map(|&i| PageRefCtx {
+                title: self.pages[i].title.clone(),
+                description: self.pages[i].front.description.clone(),
+                url: self.pages[i].url.clone(),
+                weight: self.pages[i].front.weight,
+            })
+            .collect();
+        out.extend(node.subsections.iter().map(|s| PageRefCtx {
+            title: s.title.clone(),
+            description: s.description.clone(),
+            url: s.url.clone(),
+            weight: s.weight,
+        }));
+        out
+    }
+
     /// 이 페이지의 다른 언어판. **번역이 실제로 있는 것만** 담는다.
     pub fn translations_of(&self, page: &Page) -> Vec<LanguageLink> {
         let Some(by_lang) = self.translations.get(&page.translation_key) else {
