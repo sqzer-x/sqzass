@@ -46,6 +46,55 @@ Put your own `sitemap.xml` or `robots.txt` in `static/` and sqzass will not
 generate that file at all. It does not overwrite yours, and it does not
 silently ignore it either.
 
+## Where these guides go
+
+| | |
+|---|---|
+| [GitHub Pages](@/deploy/github-pages.md) | Where this site is, and the host that forced the design |
+| [Netlify](@/deploy/netlify.md) | `netlify.toml`, deploy previews |
+| [Vercel](@/deploy/vercel.md) | `vercel.json`, and why the framework machinery is inert |
+| [Cloudflare Pages](@/deploy/cloudflare-pages.md) | Two dashboard fields, and `_headers` — the host to move to when you need cache control |
+| [GitLab Pages](@/deploy/gitlab-ci.md) | `.gitlab-ci.yml`, and the project subpath |
+| [Codeberg Pages](@/deploy/codeberg-pages.md) | A `pages` branch, `.domains`, Forgejo Actions |
+
+Every one of them is the same two facts: run `sqzass build`, publish `public/`.
+The pages differ only in where those facts are written down and what each host
+calls its preview URL.
+
+## Sites served under a path
+
+`https://user.github.io/repo`, `https://group.gitlab.io/project` and
+`https://user.codeberg.page/repo` are all project sites, and all of them serve
+your output under a path rather than at a domain root. Put the whole thing in
+`base_url`:
+
+```toml
+base_url = "https://user.github.io/repo"
+```
+
+sqzass then prefixes every URL it generates — page links, stylesheet hrefs, the
+search index — while the output directory stays flat, because that directory is
+the root the host serves.
+
+Leaving the path out is the one mistake here that is silent. The build succeeds,
+the pages are all there, and every link and stylesheet resolves one level too
+high.
+
+## static/ is a passthrough
+
+Anything in `static/` lands in the output with its path and name intact, which
+is how host-specific files work without sqzass knowing about any host:
+
+| | |
+|---|---|
+| `CNAME` | GitHub Pages custom domain |
+| `.domains` | Codeberg Pages custom domain |
+| `_headers`, `_redirects` | Netlify, Cloudflare Pages |
+| `.well-known/*` | Domain verification, `security.txt` |
+
+Only CSS and JavaScript get a content hash. A name that is the contract keeps
+its name.
+
 ## Two files worth knowing about
 
 `.nojekyll` is written into every build. Without it GitHub Pages runs the

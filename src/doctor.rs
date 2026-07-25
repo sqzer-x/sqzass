@@ -199,6 +199,9 @@ fn unused_templates(
 ) -> Result<()> {
     let templates = Templates::load(root)?;
     let mut used: BTreeSet<String> = BTreeSet::new();
+    // 페이지가 고르는 게 아니라 빌드가 직접 렌더하는 템플릿. 이걸 빼면 린트가
+    // 쓰이고 있는 파일을 지우라고 권하게 된다.
+    used.insert(crate::emit::NOT_FOUND_PATH.to_string());
     for page in pages {
         if let Ok(name) = crate::select_template(page, site, &templates) {
             used.insert(name);

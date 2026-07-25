@@ -43,6 +43,52 @@ rewrite도 없으므로, 그런 것에 기대는 게 생기면 여기서 가장 
 `sitemap.xml`이나 `robots.txt`를 직접 `static/`에 넣으면 sqzass는 그 파일을 아예
 만들지 않습니다. 당신 것을 덮어쓰지도, 조용히 무시하지도 않습니다.
 
+## 각 안내서
+
+| | |
+|---|---|
+| [GitHub Pages](@/deploy/github-pages.md) | 이 사이트가 있는 곳이자, 설계를 강제한 호스트 |
+| [Netlify](@/deploy/netlify.md) | `netlify.toml`, 배포 프리뷰 |
+| [Vercel](@/deploy/vercel.md) | `vercel.json`, 프레임워크 기능이 무의미한 이유 |
+| [Cloudflare Pages](@/deploy/cloudflare-pages.md) | 대시보드 두 칸과 `_headers` — 캐시 제어가 필요해지면 옮겨 갈 곳 |
+| [GitLab Pages](@/deploy/gitlab-ci.md) | `.gitlab-ci.yml`, 프로젝트 서브경로 |
+| [Codeberg Pages](@/deploy/codeberg-pages.md) | `pages` 브랜치, `.domains`, Forgejo Actions |
+
+전부 같은 사실 두 개입니다. `sqzass build`를 돌리고 `public/`을 발행한다. 문서가
+갈리는 건 그 두 사실을 어디에 적느냐와, 각 호스트가 프리뷰 URL을 뭐라고 부르느냐뿐입니다.
+
+## 경로 아래에 놓이는 사이트
+
+`https://user.github.io/repo`, `https://group.gitlab.io/project`,
+`https://user.codeberg.page/repo` — 전부 프로젝트 사이트이고, 전부 결과물을 도메인
+루트가 아니라 경로 아래에 서빙합니다. `base_url`에 그 전체를 적으세요.
+
+```toml
+base_url = "https://user.github.io/repo"
+```
+
+그러면 sqzass가 생성하는 모든 URL에 접두사가 붙습니다 — 페이지 링크도, 스타일시트
+href도, 검색 색인도. 출력 디렉터리는 평평하게 남는데, 그 디렉터리가 곧 호스트가
+서빙하는 루트이기 때문입니다.
+
+경로를 빠뜨리는 건 여기서 유일하게 **조용한** 실수입니다. 빌드는 성공하고 페이지도
+다 있는데, 모든 링크와 스타일시트가 한 단계 위를 가리킵니다.
+
+## static/ 은 통과 경로입니다
+
+`static/` 안의 것은 경로와 이름이 그대로 유지된 채 출력에 놓입니다. sqzass가 어떤
+호스트도 알지 못한 채로 호스트별 파일이 동작하는 방식입니다.
+
+| | |
+|---|---|
+| `CNAME` | GitHub Pages 커스텀 도메인 |
+| `.domains` | Codeberg Pages 커스텀 도메인 |
+| `_headers`, `_redirects` | Netlify, Cloudflare Pages |
+| `.well-known/*` | 도메인 소유 검증, `security.txt` |
+
+콘텐츠 해시가 붙는 건 CSS와 JavaScript뿐입니다. 이름 자체가 계약인 파일은 이름을
+유지합니다.
+
 ## 알아 둘 파일 둘
 
 `.nojekyll`은 빌드마다 출력에 들어갑니다. 없으면 GitHub Pages가 출력을 Jekyll로 한 번
