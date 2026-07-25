@@ -40,6 +40,13 @@
   --measure: 68ch;
   --gutter: clamp(1.25rem, 4vw, 3rem);
 
+  /* 크롬 컨트롤의 치수. 검색·언어·GitHub·테마가 전부 이 값을 쓴다.
+     하나만 다른 모양이면 그 하나가 고장난 것처럼 보인다.
+     터미널에서 모는 도구라 키캡처럼 다룬다 — 얇은 테두리, 작은 반경. */
+  --control-h: 2rem;
+  --radius: 3px;
+  --masthead-h: 3.5rem;
+
   --s-1: 0.8125rem;
   --s0:  1.0625rem;
   --s1:  1.25rem;
@@ -99,11 +106,20 @@ a:hover { text-decoration-thickness: 2px; }
 
 /* ---------- header ---------- */
 
+/* 높이를 고정한다. 내용에 따라 늘어나면 페이지마다 상단바 높이가 달라지고,
+   그게 "비율이 이상하다"로 읽힌다.
+   align-items는 center다. baseline이면 로고를 품은 브랜드와 옆 내비가 서로
+   다른 기준선에 앉아 글자들이 어긋난 것처럼 보인다. */
 .masthead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
-  align-items: baseline;
-  gap: clamp(1rem, 3vw, 2.25rem);
-  padding: 1.15rem var(--gutter);
+  align-items: center;
+  gap: clamp(0.75rem, 2.5vw, 2rem);
+  height: var(--masthead-h);
+  padding: 0 var(--gutter);
+  background: var(--paper);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -111,38 +127,41 @@ a:hover { text-decoration-thickness: 2px; }
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  flex: none;
   font-family: var(--mono);
   font-size: var(--s1);
   font-weight: 600;
   letter-spacing: -0.03em;
   color: var(--ink);
   text-decoration: none;
+  /* 좁은 화면에서 "sqzass"가 한 글자씩 세로로 쪼개지던 자리. */
+  white-space: nowrap;
 }
 .brand:hover { color: var(--accent); }
 
 /* 검은 선화라 다크 배경에서는 그냥 안 보인다. 파일을 두 벌 두는 대신 반전한다 —
-   순수 흑백 선화에서는 반전이 정확히 흰 선을 만든다.
-   크기는 손등 해칭이 뭉개지지 않는 선까지 키웠다. 이보다 작으면 그림이 아니라
-   얼룩으로 읽힌다. */
+   순수 흑백 선화에서는 반전이 정확히 흰 선을 만든다. */
 .brand img {
-  width: 2.2em;
-  height: 2.2em;
+  width: 1.9em;
+  height: 1.9em;
   filter: invert(1);
 }
 :root[data-theme="light"] .brand img { filter: none; }
 
-/* The section list. Same data as the sidebar, one level up, so a reader can
-   cross between parts of the documentation without returning to the index. */
+/* 문서 갈래. 사이드바와 같은 데이터를 한 단계 위에서. */
 .sections {
   display: flex;
-  flex-wrap: wrap;
-  gap: clamp(0.75rem, 2vw, 1.5rem);
+  align-items: center;
+  gap: clamp(0.6rem, 1.6vw, 1.4rem);
+  min-width: 0;
+  overflow: hidden;
   font-size: var(--s-1);
+  white-space: nowrap;
 }
 .sections a {
   color: var(--ink-2);
   text-decoration: none;
-  padding-bottom: 0.15rem;
+  line-height: var(--masthead-h);
   border-bottom: 2px solid transparent;
 }
 .sections a:hover { color: var(--ink); }
@@ -152,41 +171,46 @@ a:hover { text-decoration-thickness: 2px; }
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-family: var(--mono);
-  font-size: var(--s-1);
+  gap: 0.4rem;
+  flex: none;
 }
 
-.tools a { color: var(--ink-2); text-decoration: none; }
-.tools a:hover { color: var(--accent); text-decoration: underline; }
-
-.theme-toggle, .search-trigger {
+/* ---------- chip: 크롬 컨트롤 하나의 모양 ----------
+   검색, 언어, GitHub, 테마가 전부 이것이다. 링크든 버튼이든 겉모습은 같아야
+   한다 — 사용자에게는 둘 다 "누르는 것"이고, 하나만 맨 텍스트면 그 하나가
+   빠뜨린 것처럼 보인다. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: var(--control-h);
+  padding: 0 0.6rem;
   font: inherit;
   font-family: var(--mono);
+  font-size: var(--s-1);
+  line-height: 1;
   color: var(--ink-2);
   background: none;
   border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
-.theme-toggle:hover, .search-trigger:hover { color: var(--accent); border-color: currentColor; }
-
-.search-trigger {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  min-width: 11rem;
-  text-align: left;
+.chip:hover {
+  color: var(--ink);
+  background: var(--raised);
+  border-color: var(--ink-3);
 }
+
+.search-trigger { min-width: 11rem; justify-content: space-between; }
 .search-trigger kbd {
-  margin-left: auto;
   font: inherit;
   font-size: 0.7rem;
   color: var(--ink-3);
   border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 0 0.3rem;
+  border-radius: var(--radius);
+  padding: 0.1rem 0.3rem;
 }
 
 /* ---------- breadcrumb ---------- */
@@ -210,7 +234,7 @@ a:hover { text-decoration-thickness: 2px; }
 .layout {
   display: grid;
   grid-template-columns: 15rem minmax(0, 1fr) 13rem;
-  gap: clamp(1.5rem, 4vw, 3.5rem);
+  gap: clamp(1.5rem, 4vw, 3rem);
   align-items: start;
   max-width: 84rem;
   margin: 0 auto;
@@ -221,57 +245,96 @@ main { min-width: 0; max-width: var(--measure); }
 
 .sidebar, .toc {
   position: sticky;
-  top: 2rem;
+  /* 상단바가 sticky이므로 그 아래에 붙는다. */
+  top: calc(var(--masthead-h) + 1.5rem);
   font-size: var(--s-1);
   line-height: 1.6;
-  max-height: calc(100vh - 4rem);
+  max-height: calc(100vh - var(--masthead-h) - 3rem);
   overflow-y: auto;
 }
 
+/* 사이드바는 높이를 채운다. 내용 높이에 맞추면 경계선이 목록 끝에서 뚝 끊겨
+   구역이 아니라 미완성으로 읽힌다. */
+.sidebar { height: calc(100vh - var(--masthead-h) - 3rem); }
+
 /* ---------- sidebar ---------- */
 
-.sidebar ul { list-style: none; margin: 0; padding: 0; }
-.sidebar > ul > li + li { margin-top: 1.5rem; }
-
-.sidebar ul ul {
-  margin-top: 0.4rem;
-  border-left: 1px solid var(--rule);
+/* <details>다. 넓은 화면에서는 열린 채 고정이라 summary를 감추고, 좁은 화면에서만
+   서랍이 된다. 구역을 나누는 건 오른쪽 경계선 하나 — 배경을 따로 깔지 않아도
+   사이드바가 본문과 다른 층이라는 게 읽힌다. */
+.sidebar {
+  border-right: 1px solid var(--rule);
+  padding-right: 1rem;
 }
+.sidebar > summary { display: none; }
 
-.sidebar a {
-  display: block;
-  padding: 0.2rem 0;
-  color: var(--ink-2);
-  text-decoration: none;
-}
-.sidebar ul ul a { padding-left: 0.85rem; margin-left: -1px; }
-.sidebar a:hover { color: var(--accent); }
+.nav-tree, .nav-tree ul { list-style: none; margin: 0; padding: 0; }
+.nav-tree > li + li { margin-top: 0.15rem; }
 
-/* Section headings in the tree read as labels, not links-among-links. */
-.sidebar > ul > li > a {
+/* 갈래 제목. 누르면 접힌다는 걸 셰브런이 말한다 — 텍스트로 쓸 수 없는 자리라
+   여기서는 도형을 쓰되, 폰트가 아니라 CSS로 그려서 폴백 문제를 피한다. */
+.nav-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius);
   font-family: var(--mono);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
+  cursor: pointer;
+  list-style: none;
 }
+.nav-group > summary::-webkit-details-marker { display: none; }
+.nav-group > summary:hover { color: var(--ink); background: var(--raised); }
 
-.sidebar a[aria-current="page"] {
+.nav-group > summary::before {
+  content: "";
+  width: 0.35rem;
+  height: 0.35rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease;
+}
+.nav-group[open] > summary::before { transform: rotate(45deg); }
+
+.nav-tree a {
+  display: block;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.nav-tree a:hover { color: var(--ink); background: var(--raised); }
+
+/* 현재 항목은 판 전체 폭을 쓰는 알약이다. 왼쪽 막대 하나보다 훨씬 빨리 눈에 띈다. */
+.nav-tree a[aria-current="page"] {
   color: var(--ink);
   font-weight: 600;
+  background: var(--raised);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
-.sidebar ul ul a[aria-current="page"] {
-  border-left: 2px solid var(--accent);
-  padding-left: calc(0.85rem - 1px);
-}
+
+.nav-group > ul { margin: 0.1rem 0 0.6rem; padding-left: 0.6rem; }
 
 /* ---------- table of contents ---------- */
 
 .toc ul { list-style: none; margin: 0; padding: 0; }
 .toc > ul > li + li { margin-top: 0.15rem; }
 .toc ul ul { padding-left: 0.85rem; }
-.toc a { color: var(--ink-3); text-decoration: none; display: block; padding: 0.15rem 0; }
-.toc a:hover { color: var(--accent); }
+.toc a {
+  display: block;
+  padding: 0.2rem 0 0.2rem 0.7rem;
+  border-left: 2px solid transparent;
+  color: var(--ink-3);
+  text-decoration: none;
+}
+.toc a:hover { color: var(--ink); }
+/* 지금 읽고 있는 자리. ui.js가 스크롤을 보고 표시한다 — 없으면 그냥 목록이다. */
+.toc a[aria-current] { color: var(--ink); border-left-color: var(--accent); }
 
 .toc::before {
   content: attr(data-label);
@@ -684,9 +747,72 @@ html[lang="ko"] .pager span {
   color: var(--ink-3);
 }
 
-@media (max-width: 40rem) {
-  .search-trigger span { display: none; }
+/* ---------- narrow screens ----------
+   여기 규칙이 없어서 420px에서 마스트헤드가 무너졌다. 브랜드가 한 글자씩 세로로
+   쪼개지고 GitHub도 마찬가지였다. 좁아지면 줄이는 게 아니라 **뺀다** — 갈래 내비는
+   사이드바 서랍이 같은 일을 하고, GitHub는 콜로폰에 이미 있다. */
+
+@media (max-width: 60rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 1.5rem;
+  }
+
+  /* 서랍이 된다. 열고 닫는 건 <details>가, 처음 닫는 건 ui.js가 한다. */
+  .sidebar {
+    position: static;
+    /* 넓은 화면에서 경계선을 채우려고 준 높이를 되돌린다. 안 그러면 서랍이
+       접혀 있어도 100vh를 차지해 본문이 화면 밖으로 밀린다. */
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    padding: 0 0 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .sidebar > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: var(--control-h);
+    padding: 0 0.6rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: var(--s-1);
+    color: var(--ink-2);
+    cursor: pointer;
+    list-style: none;
+  }
+  .sidebar > summary::-webkit-details-marker { display: none; }
+  .sidebar > summary::before {
+    content: "";
+    width: 0.35rem;
+    height: 0.35rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+  }
+  .sidebar[open] > summary::before { transform: rotate(45deg); }
+  .sidebar[open] > nav { margin-top: 0.75rem; }
+
+  /* 목차는 사이드바 서랍과 같은 말을 한 번 더 하는 셈이라 뺀다. */
+  .toc { display: none; }
+
+  /* 갈래 내비도 서랍에 있다. */
+  .sections { display: none; }
+
+  /* GitHub는 콜로폰에 있다. 검색은 라벨만 남기고 단축키 힌트를 뺀다 —
+     터치 화면에는 누를 키가 없다. */
+  .chip-wide { display: none; }
   .search-trigger { min-width: 0; }
+  .search-trigger kbd { display: none; }
+}
+
+@media (max-width: 26rem) {
+  /* 이보다 좁으면 워드마크까지 자리를 다툰다. 마크만 남긴다 — 로고가 곧 이름이다. */
+  .brand span { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

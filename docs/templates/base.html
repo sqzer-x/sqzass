@@ -62,36 +62,41 @@
     <span>{{ site.title }}</span>
   </a>
 
-  {#- The top nav is the section list. It is the same data the sidebar draws,
-      one level up, so a reader can move between parts of the documentation
-      without going back to the index. #}
+  {#- 문서 갈래. 사이드바와 같은 데이터를 한 단계 위에서 보여 주므로, 좁은 화면에서는
+      사이드바 서랍이 같은 일을 해서 감춘다. #}
   <nav class="sections" aria-label="{{ t("sections") }}">
     {%- for s in site.sections %}
     <a href="{{ s.url }}"{% if page.section and page.section.url == s.url or page.url == s.url %} aria-current="true"{% endif %}>{{ s.title }}</a>
     {%- endfor %}
   </nav>
 
+  {#- 크롬은 전부 같은 컨트롤이다. 하나만 텍스트 링크로 두면 그 하나가 고장난
+      것처럼 보인다. #}
   <div class="tools">
-    <button id="search-trigger" class="search-trigger" type="button"
+    <button id="search-trigger" class="chip search-trigger" type="button"
             data-index="{{ site.base_path }}/search-{{ page.language }}.json">
-      {#- The label is replaced with the reader's own modifier by search.js;
-          this is the value someone with JavaScript off sees. #}
-      <span>{{ t("search") }}</span><kbd>Ctrl /</kbd>
+      <span>{{ t("search") }}</span>
+      {#- 라벨은 search.js가 읽는 사람의 수정자 키로 바꿔 쓴다. 이건 JS가 없을 때 값. #}
+      <kbd>Ctrl /</kbd>
     </button>
     {%- for lang in page.translations %}
-    <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
+    <a class="chip" href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
     {%- endfor %}
-    <a href="https://github.com/sqzer-x/sqzass">GitHub</a>
-    {#- Text, not a glyph: ◐/☾ and friends are missing from enough fallback
-        stacks that they render as a box. #}
-    <button class="theme-toggle" type="button">{{ t("theme") }}</button>
+    <a class="chip chip-wide" href="https://github.com/sqzer-x/sqzass">GitHub</a>
+    {#- 글자다. ◐/☾ 같은 기호는 폴백 스택에 없는 경우가 많아 네모로 나온다. #}
+    <button class="chip theme-toggle" type="button">{{ t("theme") }}</button>
   </div>
 </header>
 
 <div class="layout">
-  <aside class="sidebar" aria-label="{{ t("documentation") }}">
-    {{ nav(site.sections, page.url) }}
-  </aside>
+  {#- <details>는 열린 채로 나간다. 좁은 화면에서만 ui.js가 닫는다 — JS가 없으면
+      펼쳐진 채로 남는데, 그건 못 쓰는 상태가 아니라 그냥 긴 상태다. #}
+  <details class="sidebar" id="nav-drawer" open>
+    <summary>{{ t("documentation") }}</summary>
+    <nav aria-label="{{ t("documentation") }}">
+      {{ nav(site.sections, page.url, page.section.url if page.section else "") }}
+    </nav>
+  </details>
 
   <main id="content">
     <div class="title-block">
@@ -148,5 +153,6 @@ document.querySelector(".theme-toggle").addEventListener("click", function () {
 });
 </script>
 <script src="{{ asset("js/search.js") }}" defer></script>
+<script src="{{ asset("js/ui.js") }}" defer></script>
 </body>
 </html>
