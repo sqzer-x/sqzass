@@ -23,6 +23,15 @@ enum Command {
     Build(BuildArgs),
     /// 라이브 리로드가 붙은 개발 서버를 띄운다
     Serve(ServeArgs),
+    /// 새 사이트를 만든다
+    Init(InitArgs),
+}
+
+#[derive(clap::Args)]
+struct InitArgs {
+    /// 만들 디렉터리. 없으면 만든다.
+    #[arg(default_value = ".", value_name = "DIR")]
+    dir: PathBuf,
 }
 
 #[derive(clap::Args)]
@@ -90,6 +99,14 @@ fn run() -> Result<()> {
                 stats.pages_written,
                 display_path(&stats.output_dir)
             );
+            Ok(())
+        }
+        Command::Init(args) => {
+            let written = sqzass::init::init(&args.dir)?;
+            for rel in &written {
+                println!("  {}", display_path(&args.dir.join(rel)));
+            }
+            println!("\nsqzass serve -i {}", display_path(&args.dir));
             Ok(())
         }
         Command::Serve(args) => {

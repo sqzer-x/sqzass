@@ -4,6 +4,7 @@ pub mod assets;
 pub mod config;
 pub mod content;
 pub mod highlight;
+pub mod init;
 pub mod links;
 pub mod markdown;
 pub mod render;
