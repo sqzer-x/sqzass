@@ -1,6 +1,0 @@
-# mold 링커 — 링크 시간을 크게 줄인다. (mold 2.41.0)
-#
-# gcc는 `-fuse-ld=mold`를 쓴다 (gcc 12.1+). `--ld-path=`는 clang 전용 플래그라
-# gcc에서는 "unrecognized command-line option"으로 실패한다.
-[target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "link-arg=-fuse-ld=mold"]

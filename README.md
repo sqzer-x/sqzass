@@ -55,6 +55,24 @@ cargo build --release
 
 Requires Rust 1.97 or newer. Nothing else.
 
+<details>
+<summary>Optional: faster linking with mold</summary>
+
+`.cargo/config.toml` is gitignored, because a linker choice is a property of your
+machine and not of this project — committing one forces it on everyone who clones
+and on CI. If you have [mold] installed, create the file yourself:
+
+```toml
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+```
+
+Note `-fuse-ld=mold` is the gcc spelling; `--ld-path=` is clang-only and gcc
+rejects it.
+
+[mold]: https://github.com/rui314/mold
+</details>
+
 ## Documentation
 
 <https://sqzass.sqzer.com> — built with sqzass, from `docs/` in this repository.

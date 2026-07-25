@@ -1,5 +1,9 @@
 /target
 /docs/public
+
+# 로컬 개발자 설정. 링커 같은 머신별 선택이 들어가므로 커밋하지 않는다 —
+# 커밋하면 클론하는 모든 사람과 CI에 강제된다. 설정법은 README 참고.
+/.cargo/config.toml
 **/*.rs.bk
 *.pdb
 
