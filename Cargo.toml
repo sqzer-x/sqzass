@@ -22,6 +22,7 @@ path = "src/main.rs"
 [dependencies]
 # --- M0 ---
 anyhow    = "1"
+axum = { version = "0.8", features = ["ws"] }
 clap      = { version = "4.6", features = ["derive"] }
 # ⚠️ comrak의 default = ["cli", "syntect-onig", "bon"] 이다. 그대로 쓰면
 #    (1) comrak 자체 CLI 의존성(clap/shell-words/xdg/fmt2io)이 딸려오고
@@ -31,9 +32,13 @@ clap      = { version = "4.6", features = ["derive"] }
 #    구현하므로(업스트림 #330이 재작업 대상으로 지적) 필요 없다.
 comrak    = { version = "0.54", default-features = false }
 minijinja = "2.21"
+notify = "8.2"
+notify-debouncer-full = "0.7"
 serde     = { version = "1", features = ["derive"] }
 syntect = { version = "5.3", default-features = false, features = ["default-fancy"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "signal"] }
 toml      = "1.1"
+tower-http = { version = "0.7", features = ["fs"] }
 two-face = { version = "0.5", default-features = false, features = ["syntect-fancy"] }
 walkdir   = "2"
 

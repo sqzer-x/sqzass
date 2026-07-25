@@ -5,10 +5,12 @@ pub mod content;
 pub mod highlight;
 pub mod markdown;
 pub mod render;
+pub mod serve;
 pub mod site;
 
 use anyhow::{Context, Result};
 use minijinja::context;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use config::Config;
@@ -37,7 +39,24 @@ pub struct BuildStats {
     pub output_dir: PathBuf,
 }
 
-pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
+/// 빌드 산출물을 메모리에 담는다.
+///
+/// 개발 서버가 디스크를 거치지 않고 이걸 그대로 서빙한다. 그래서 브라우저가 반쯤
+/// 쓰인 파일을 읽는 일이 없고, 저장할 때마다 디스크에 쓰기가 증폭되지도 않는다.
+#[derive(Debug, Default)]
+pub struct BuildOutput {
+    /// 출력 디렉터리 기준 상대 경로 → 내용
+    pub files: BTreeMap<String, Vec<u8>>,
+}
+
+impl BuildOutput {
+    pub fn pages(&self) -> usize {
+        self.files.keys().filter(|k| k.ends_with(".html")).count()
+    }
+}
+
+/// 사이트를 빌드해 메모리에 담는다. 디스크는 건드리지 않는다.
+pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
     let root = &opts.input;
     let mut cfg = Config::load(root)?;
     if let Some(base) = &opts.base_url {
@@ -45,7 +64,6 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
     }
 
     let drafts = opts.drafts || cfg.build.drafts;
-    let out_dir = resolve_output_dir(opts, &cfg);
 
     let pages = content::discover(root, &cfg, drafts)?;
     let site = Site::build(&pages, &cfg);
@@ -59,26 +77,18 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
         None
     };
 
-    // 출력 디렉터리를 매번 새로 만든다. 지운 페이지가 유령으로 남는 걸 막는다.
-    if out_dir.exists() {
-        std::fs::remove_dir_all(&out_dir)
-            .with_context(|| format!("{}을(를) 비울 수 없습니다", out_dir.display()))?;
-    }
+    let mut out = BuildOutput::default();
 
     // 하이라이트 스타일시트는 테마에서 생성한다. HTML은 클래스만 담고 있으므로
     // 이 파일 하나를 바꾸면 사이트 전체의 코드 색이 바뀐다.
     if cfg.highlight.enabled {
         let css = highlight::stylesheet(&cfg.highlight)?;
-        let dest = out_dir.join(HIGHLIGHT_CSS_URL.trim_start_matches('/'));
-        if let Some(parent) = dest.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("{}을(를) 만들 수 없습니다", parent.display()))?;
-        }
-        std::fs::write(&dest, css)
-            .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))?;
+        out.files.insert(
+            HIGHLIGHT_CSS_URL.trim_start_matches('/').to_string(),
+            css.into_bytes(),
+        );
     }
 
-    let mut written = 0usize;
     for page in &pages {
         let html = render_page(
             page,
@@ -88,23 +98,43 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
             &md,
             highlight_css_url.as_deref(),
         )?;
-        let dest = out_dir.join(&page.out_path);
-        if let Some(parent) = dest.parent() {
-            std::fs::create_dir_all(parent)
-                .with_context(|| format!("{}을(를) 만들 수 없습니다", parent.display()))?;
-        }
-        std::fs::write(&dest, html)
-            .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))?;
-        written += 1;
+        out.files.insert(
+            page.out_path.to_string_lossy().replace('\\', "/"),
+            html.into_bytes(),
+        );
     }
 
     // GitHub Pages는 이 파일이 없으면 출력을 Jekyll로 한 번 더 굴려서
     // `_`로 시작하는 디렉터리를 통째로 삼킨다.
-    std::fs::write(out_dir.join(".nojekyll"), "")
-        .with_context(|| format!("{}에 .nojekyll을 쓸 수 없습니다", out_dir.display()))?;
+    out.files.insert(".nojekyll".into(), Vec::new());
+
+    Ok(out)
+}
+
+/// 사이트를 빌드해 디스크에 쓴다.
+pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
+    let cfg = Config::load(&opts.input)?;
+    let out_dir = resolve_output_dir(opts, &cfg);
+    let output = build_to_memory(opts)?;
+
+    // 출력 디렉터리를 매번 새로 만든다. 지운 페이지가 유령으로 남는 걸 막는다.
+    if out_dir.exists() {
+        std::fs::remove_dir_all(&out_dir)
+            .with_context(|| format!("{}을(를) 비울 수 없습니다", out_dir.display()))?;
+    }
+
+    for (rel, bytes) in &output.files {
+        let dest = out_dir.join(rel);
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("{}을(를) 만들 수 없습니다", parent.display()))?;
+        }
+        std::fs::write(&dest, bytes)
+            .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))?;
+    }
 
     Ok(BuildStats {
-        pages_written: written,
+        pages_written: output.pages(),
         output_dir: out_dir,
     })
 }
