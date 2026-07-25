@@ -55,3 +55,36 @@
   );
   headings.forEach(function (h) { io.observe(h); });
 })();
+
+/* Copy buttons on code blocks.
+ *
+ * The documentation says line numbers and a copy button are the site's own CSS
+ * and JavaScript rather than configuration keys. This is that claim, kept.
+ */
+(function () {
+  var s = document.currentScript || document.querySelector("script[data-copy]");
+  var COPY = (s && s.dataset.copy) || "Copy";
+  var DONE = (s && s.dataset.copied) || "Copied";
+  if (!navigator.clipboard) return;
+
+  document.querySelectorAll(".prose pre.highlight").forEach(function (pre) {
+    var code = pre.querySelector("code");
+    if (!code) return;
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "copy";
+    b.textContent = COPY;
+    b.addEventListener("click", function () {
+      // pre.textContent를 쓰면 버튼 자신의 라벨까지 복사된다.
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        b.textContent = DONE;
+        b.dataset.done = "";
+        setTimeout(function () {
+          b.textContent = COPY;
+          delete b.dataset.done;
+        }, 1200);
+      });
+    });
+    pre.appendChild(b);
+  });
+})();
