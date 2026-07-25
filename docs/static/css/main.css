@@ -46,6 +46,9 @@
   --control-h: 2rem;
   --radius: 3px;
   --masthead-h: 3.5rem;
+  /* 한 박자. 값을 여기 한 번만 두면 모든 상호작용이 같은 속도로 반응하고,
+     그게 "같은 물건"이라는 느낌을 만든다. */
+  --tr: 0.14s ease;
 
   --s-1: 0.8125rem;
   --s0:  1.0625rem;
@@ -71,7 +74,34 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* 목차나 heading anchor를 눌렀을 때 뛰지 않고 미끄러진다. 어디로 갔는지가
+     보여야 방금 누른 것과 지금 보는 것을 연결할 수 있다. */
+  scroll-behavior: smooth;
+}
+
+/* 스크롤바를 사이트의 일부로 다룬다. 코드 블록 하나만 손보고 페이지·사이드바·
+   목차·검색 결과를 기본값으로 두면, 스크롤이 생기는 자리마다 다른 물건이 나온다.
+   Firefox는 표준 속성을, 나머지는 -webkit- 의사요소를 본다. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* 선택 영역. 기본 파랑은 이 사이트의 어느 색과도 관계가 없다. */
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: var(--ink);
+}
 
 body {
   margin: 0;
@@ -84,7 +114,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-a { color: var(--accent); text-underline-offset: 0.2em; }
+a { color: var(--accent); text-underline-offset: 0.2em; transition: color var(--tr); }
 a:hover { text-decoration-thickness: 2px; }
 
 :focus-visible {
@@ -164,6 +194,7 @@ a:hover { text-decoration-thickness: 2px; }
   line-height: var(--masthead-h);
   border-bottom: 2px solid transparent;
 }
+.sections a { transition: color var(--tr), border-color var(--tr); }
 .sections a:hover { color: var(--ink); }
 .sections a[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
 
@@ -197,6 +228,7 @@ a:hover { text-decoration-thickness: 2px; }
   white-space: nowrap;
   cursor: pointer;
 }
+.chip { transition: color var(--tr), background var(--tr), border-color var(--tr); }
 .chip:hover {
   color: var(--ink);
   background: var(--raised);
@@ -317,7 +349,7 @@ main { min-width: 0; max-width: var(--measure); }
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
   transform: rotate(-45deg);
-  transition: transform 0.12s ease;
+  transition: transform var(--tr);
 }
 .nav-group[open] > summary::before { transform: rotate(45deg); }
 
@@ -328,6 +360,7 @@ main { min-width: 0; max-width: var(--measure); }
   color: var(--ink-2);
   text-decoration: none;
 }
+.nav-tree a { transition: color var(--tr), background var(--tr); }
 .nav-tree a:hover { color: var(--ink); background: var(--raised); }
 
 /* 현재 항목은 판 전체 폭을 쓰는 알약이다. 왼쪽 막대 하나보다 훨씬 빨리 눈에 띈다. */
@@ -352,6 +385,7 @@ main { min-width: 0; max-width: var(--measure); }
   color: var(--ink-3);
   text-decoration: none;
 }
+.toc a { transition: color var(--tr), border-color var(--tr); }
 .toc a:hover { color: var(--ink); }
 /* 지금 읽고 있는 자리. ui.js가 스크롤을 보고 표시한다 — 없으면 그냥 목록이다. */
 .toc a[aria-current] { color: var(--ink); border-left-color: var(--accent); }
@@ -429,7 +463,9 @@ main { min-width: 0; max-width: var(--measure); }
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.3;
-  scroll-margin-top: 2rem;
+  /* 상단바가 sticky이므로 그 높이만큼 비켜야 한다. 이 값이 작으면 목차를
+     눌렀을 때 제목이 상단바 아래로 들어가 보이지 않는다 — 실제로 24px 가렸다. */
+  scroll-margin-top: calc(var(--masthead-h) + 1.5rem);
 }
 .prose h2 { font-size: var(--s2); margin: 2.9rem 0 0.9rem; }
 .prose h3 { font-size: var(--s1); margin: 2.25rem 0 0.7rem; }
@@ -454,7 +490,9 @@ main { min-width: 0; max-width: var(--measure); }
   text-decoration: none;
   opacity: 0;
   font-weight: 400;
+  transition: opacity var(--tr), color var(--tr);
 }
+.anchor:hover { color: var(--accent); }
 h1:hover > .anchor, h2:hover > .anchor, h3:hover > .anchor,
 h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
 .anchor:focus-visible { opacity: 1; }
@@ -483,19 +521,12 @@ h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
   overflow-x: auto;
 
   /* 넘치는 코드에는 스크롤이 있다는 표시가 필요하다. 잘린 줄만 보이고 아무
-     힌트가 없으면 사람들은 그게 전부인 줄 안다.
-     그림자를 그리는 CSS 기법을 먼저 써 봤는데, 넘치지도 않는 블록에 회색 띠가
-     남았다. 브라우저가 이미 정확히 이 일을 하는 것을 갖고 있다 — 넘칠 때만
-     나타나는 스크롤바. 보이게만 만들면 된다. */
-  scrollbar-width: thin;
+     힌트가 없으면 사람들은 그게 전부인 줄 안다. 스크롤바 모양은 위쪽 전역
+     규칙이 정하고, 여기서는 대비만 한 단계 올린다 — 코드 블록의 면이 본문보다
+     밝아서 같은 색이면 묻힌다. */
   scrollbar-color: var(--ink-3) transparent;
 }
-.prose pre.highlight::-webkit-scrollbar { height: 6px; }
-.prose pre.highlight::-webkit-scrollbar-thumb {
-  background: var(--ink-3);
-  border-radius: 3px;
-}
-.prose pre.highlight::-webkit-scrollbar-track { background: transparent; }
+.prose pre.highlight::-webkit-scrollbar-thumb { background: var(--ink-3); }
 
 /* 복사 버튼. 도구 설정 키가 아니라 이 사이트의 CSS와 JS다 — 문서에도 그렇게
    적어 두었고, 여기가 그 말을 지키는 자리다.
@@ -514,7 +545,7 @@ h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
   border-radius: var(--radius);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition: opacity var(--tr), color var(--tr), border-color var(--tr);
 }
 .prose pre.highlight:hover .copy,
 .copy:focus-visible { opacity: 1; }
@@ -887,6 +918,7 @@ html[lang="ko"] .pager span {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
