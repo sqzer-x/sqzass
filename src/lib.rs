@@ -102,15 +102,19 @@ fn render_page(
         sections: site::section_ctx(site.sections(&page.language), site.pages),
     };
 
+    let rendered = md.render(&page.body);
+
     let page_ctx = PageCtx {
         title: page.title.clone(),
         description: page.front.description.clone(),
         url: page.url.clone(),
         permalink: format!("{}{}", cfg.base_url_trimmed(), page.url),
-        content: md.to_html(&page.body),
+        content: rendered.html,
         weight: page.front.weight,
         draft: page.front.draft,
+        // `toc`는 "목차를 보여줄지"라는 저자의 의사, `toc_entries`는 실제 데이터다.
         toc: page.front.toc,
+        toc_entries: rendered.toc,
         language: page.language.clone(),
         // 번역이 실제로 있는 언어만 담긴다 — 템플릿은 이게 비었는지로
         // 언어 전환 UI를 보일지 결정하면 된다.

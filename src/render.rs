@@ -175,7 +175,10 @@ pub struct PageCtx {
     pub content: String,
     pub weight: i64,
     pub draft: bool,
+    /// front matter의 `toc` — 목차를 렌더할지에 대한 저자의 의사.
     pub toc: bool,
+    /// 실제 목차 데이터. `toc = false`여도 채워진다(템플릿이 판단하게 둔다).
+    pub toc_entries: Vec<crate::markdown::TocEntry>,
     pub language: String,
     /// 다른 언어판. **번역이 실제로 있을 때만** 채워진다.
     pub translations: Vec<crate::site::LanguageLink>,

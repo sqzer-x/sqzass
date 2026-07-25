@@ -1,4 +1,5 @@
 {% from "partials/sidebar.html" import nav %}
+{% from "partials/toc.html" import toc_list %}
 <!doctype html>
 <html lang="{{ page.language }}">
 <head>
@@ -24,6 +25,12 @@
   <main id="content">
 {% block content %}{% endblock %}
   </main>
+
+  {%- if page.toc and page.toc_entries %}
+  <aside class="toc" aria-label="On this page">
+    {{ toc_list(page.toc_entries) }}
+  </aside>
+  {%- endif %}
 </div>
 
 {% include "partials/footer.html" %}

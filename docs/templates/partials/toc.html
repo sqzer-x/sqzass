@@ -1,0 +1,11 @@
+{# 목차. page.toc_entries는 항상 채워지고, 보일지 말지는 front matter의 toc가 정한다. #}
+{% macro toc_list(entries) %}
+<ul>
+  {%- for e in entries %}
+  <li>
+    <a href="#{{ e.id }}">{{ e.title }}</a>
+    {%- if e.children %}{{ toc_list(e.children) }}{% endif %}
+  </li>
+  {%- endfor %}
+</ul>
+{% endmacro %}
