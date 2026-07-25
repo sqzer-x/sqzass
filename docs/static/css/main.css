@@ -523,6 +523,53 @@ html[lang="ko"] .prose h4 {
   font-weight: 700;
 }
 
+/* ---------- pager ---------- */
+
+.pager {
+  display: flex;
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+.pager a {
+  flex: 1;
+  display: block;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+.pager a:hover { border-color: var(--accent); }
+
+/* A single "next" sits on the right, where the reader is heading. */
+.pager-next { text-align: right; }
+.pager-next:only-child { margin-left: auto; flex: 0 1 auto; }
+
+.pager span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.2rem;
+}
+.pager strong { font-weight: 600; }
+
+html[lang="ko"] .pager span {
+  font-family: var(--sans);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+@media (max-width: 40rem) {
+  .pager { flex-direction: column; }
+  .pager-next { text-align: left; }
+}
+
 /* ---------- search palette ----------
    A <dialog>. Escape, the backdrop, the focus trap and returning focus to the
    trigger are all the element's own behaviour; none of it is written here. */

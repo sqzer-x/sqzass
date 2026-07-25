@@ -8,6 +8,7 @@ pub mod links;
 pub mod markdown;
 pub mod render;
 pub mod search;
+pub mod seo;
 pub mod serve;
 pub mod site;
 
@@ -117,6 +118,16 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
         out.files.insert(search::path(&language), json);
     }
 
+    // `static/`에 같은 이름이 있으면 그쪽이 이긴다. 직접 넣은 robots.txt가
+    // 조용히 무시당하는 것보다는 생성을 건너뛰는 쪽이 낫다.
+    let base = cfg.base_url_trimmed();
+    out.files
+        .entry(seo::SITEMAP_PATH.into())
+        .or_insert_with(|| seo::sitemap(&pages, &site, base).into_bytes());
+    out.files
+        .entry(seo::ROBOTS_PATH.into())
+        .or_insert_with(|| seo::robots(base).into_bytes());
+
     // GitHub Pages는 이 파일이 없으면 출력을 Jekyll로 한 번 더 굴려서
     // `_`로 시작하는 디렉터리를 통째로 삼킨다.
     out.files.insert(".nojekyll".into(), Vec::new());
@@ -198,6 +209,8 @@ fn render_page(
         site.section_ref_of(page)
     };
 
+    let (prev, next) = site.neighbours_of(page);
+
     let entry = search::Entry {
         t: page.title.clone(),
         d: page.front.description.clone(),
@@ -226,6 +239,8 @@ fn render_page(
         translations: site.translations_of(page),
         children: site.children_of(page),
         section,
+        prev,
+        next,
         is_section: page.is_section,
     };
 

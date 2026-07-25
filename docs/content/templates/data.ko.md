@@ -37,6 +37,7 @@ toc = true
 | `page.toc_entries` | 목차 자체 — `{level, id, title, children}`, 중첩된 형태. |
 | `page.translations` | 이 페이지가 존재하는 언어만. 비어 있으면 전환 UI를 그리지 않으면 됩니다. |
 | `page.section` | 이 페이지가 속한 섹션. 최상위 페이지에는 없습니다. |
+| `page.prev`, `page.next` | **같은 섹션 안에서의** 이웃 페이지. |
 | `page.children` | 섹션의 자식 페이지들. 일반 페이지에서는 비어 있습니다. |
 | `page.is_section` | |
 | `page.extra` | 당신의 `[extra]` 테이블. |

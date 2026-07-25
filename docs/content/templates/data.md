@@ -38,6 +38,7 @@ and `weight`.
 | `page.toc_entries` | The contents themselves — `{level, id, title, children}`, nested. |
 | `page.translations` | Only languages this page exists in. Empty means no switcher. |
 | `page.section` | The section this page belongs to, or nothing at the top level. |
+| `page.prev`, `page.next` | The neighbouring pages **within this section**. |
 | `page.children` | A section's own pages. Empty on ordinary pages. |
 | `page.is_section` | |
 | `page.extra` | Your `[extra]` table. |

@@ -212,6 +212,9 @@ pub struct PageCtx {
     pub children: Vec<crate::site::PageRefCtx>,
     /// 이 페이지가 속한 섹션. 최상위 페이지에는 없다 — 브레드크럼이 쓴다.
     pub section: Option<crate::site::PageRefCtx>,
+    /// 같은 섹션의 이전/다음 페이지. 섹션이 정한 순서를 따른다.
+    pub prev: Option<crate::site::PageRefCtx>,
+    pub next: Option<crate::site::PageRefCtx>,
     /// 섹션 인덱스인지. 템플릿이 목록을 그릴지 판단한다.
     pub is_section: bool,
 }

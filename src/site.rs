@@ -168,6 +168,57 @@ impl<'a> Site<'a> {
         out
     }
 
+    /// 같은 섹션 안에서의 (이전, 다음) 페이지. 섹션이 정한 순서를 그대로 따른다.
+    ///
+    /// 섹션 인덱스에는 이웃이 없다 — 섹션은 자기 자식들과 같은 줄에 서 있지 않다.
+    pub fn neighbours_of(&self, page: &Page) -> (Option<PageRefCtx>, Option<PageRefCtx>) {
+        if page.is_section {
+            return (None, None);
+        }
+        let Some(section) = self.section_of(page) else {
+            return (None, None);
+        };
+        let at = section
+            .pages
+            .iter()
+            .position(|&i| self.pages[i].url == page.url);
+        let Some(at) = at else {
+            return (None, None);
+        };
+
+        let make = |i: usize| {
+            let p = &self.pages[section.pages[i]];
+            PageRefCtx {
+                title: p.title.clone(),
+                description: p.front.description.clone(),
+                url: p.url.clone(),
+                weight: p.front.weight,
+            }
+        };
+        let prev = at.checked_sub(1).map(&make);
+        let next = (at + 1 < section.pages.len()).then(|| make(at + 1));
+        (prev, next)
+    }
+
+    /// 이 페이지가 존재하는 **모든** 언어판, 자기 자신 포함. `(언어 코드, URL)`.
+    ///
+    /// `translations_of`와 달리 자기 자신을 뺀 목록이 아니다. sitemap의 hreflang
+    /// 세트는 각 URL이 자기 자신까지 포함해 전부를 나열해야 유효하다.
+    pub fn language_set_of(&self, page: &Page) -> Vec<(String, String)> {
+        let Some(by_lang) = self.translations.get(&page.translation_key) else {
+            return Vec::new();
+        };
+        let mut out: Vec<(String, String, i64)> = by_lang
+            .iter()
+            .map(|(code, &idx)| {
+                let weight = self.cfg.languages.get(code).map_or(0, |l| l.weight);
+                (code.clone(), self.pages[idx].url.clone(), weight)
+            })
+            .collect();
+        out.sort_by(|a, b| (a.2, &a.0).cmp(&(b.2, &b.0)));
+        out.into_iter().map(|(c, u, _)| (c, u)).collect()
+    }
+
     /// 이 페이지의 다른 언어판. **번역이 실제로 있는 것만** 담는다.
     pub fn translations_of(&self, page: &Page) -> Vec<LanguageLink> {
         let Some(by_lang) = self.translations.get(&page.translation_key) else {
@@ -423,6 +474,67 @@ mod tests {
 
     fn fm(title: &str, extra: &str) -> String {
         format!("+++\ntitle = \"{title}\"\n{extra}+++\n\nbody\n")
+    }
+
+    #[test]
+    fn neighbours_follow_the_section_order() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "neighbours",
+            &[
+                ("_index.md", &fm("Home", "")),
+                ("start/_index.md", &fm("Getting started", "weight = 10\n")),
+                ("start/a.md", &fm("A", "weight = 1\n")),
+                ("start/b.md", &fm("B", "weight = 2\n")),
+                ("start/c.md", &fm("C", "weight = 3\n")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let by_title = |t: &str| pages.iter().find(|p| p.title == t).unwrap();
+
+        let (prev, next) = site.neighbours_of(by_title("B"));
+        assert_eq!(prev.map(|p| p.title), Some("A".into()));
+        assert_eq!(next.map(|p| p.title), Some("C".into()));
+
+        // 양 끝은 한쪽만 있다. 다른 섹션으로 넘어가지 않는다.
+        let (prev, next) = site.neighbours_of(by_title("A"));
+        assert!(prev.is_none(), "첫 페이지에 이전이 있다");
+        assert_eq!(next.map(|p| p.title), Some("B".into()));
+        let (prev, next) = site.neighbours_of(by_title("C"));
+        assert_eq!(prev.map(|p| p.title), Some("B".into()));
+        assert!(next.is_none(), "마지막 페이지에 다음이 있다");
+
+        // 섹션 인덱스는 자식들과 같은 줄에 서 있지 않다.
+        let (prev, next) = site.neighbours_of(by_title("Getting started"));
+        assert!(prev.is_none() && next.is_none());
+    }
+
+    #[test]
+    fn language_set_includes_the_page_itself() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "langset",
+            &[
+                ("_index.md", &fm("Home", "")),
+                ("_index.ko.md", &fm("홈", "")),
+                ("solo.md", &fm("Solo", "")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let by_title = |t: &str| pages.iter().find(|p| p.title == t).unwrap();
+
+        // sitemap의 hreflang 세트는 자기 자신까지 나열해야 유효하다.
+        let set = site.language_set_of(by_title("Home"));
+        assert_eq!(
+            set,
+            vec![
+                ("en".to_string(), "/".to_string()),
+                ("ko".to_string(), "/ko/".to_string())
+            ]
+        );
+        assert_eq!(site.language_set_of(by_title("Solo")).len(), 1);
     }
 
     #[test]
