@@ -11,7 +11,7 @@ system libraries.
 ## From source
 
 ```bash
-git clone https://github.com/devastator-x/sqzass
+git clone https://github.com/sqzer-x/sqzass
 cd sqzass
 cargo build --release
 ```

@@ -11,7 +11,7 @@ sqzass는 런타임 의존성이 없는 단일 바이너리다. Node도, Python�
 ## 소스에서 빌드
 
 ```bash
-git clone https://github.com/devastator-x/sqzass
+git clone https://github.com/sqzer-x/sqzass
 cd sqzass
 cargo build --release
 ```
