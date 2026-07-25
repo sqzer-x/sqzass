@@ -46,7 +46,9 @@
   <div class="tools">
     <button id="search-trigger" class="search-trigger" type="button"
             data-index="/search-{{ page.language }}.json">
-      <span>{{ "검색" if ko else "Search" }}</span><kbd>Ctrl K</kbd>
+      {#- The label is replaced with the reader's own modifier by search.js;
+          this is the value someone with JavaScript off sees. #}
+      <span>{{ "검색" if ko else "Search" }}</span><kbd>Ctrl S</kbd>
     </button>
     {%- for t in page.translations %}
     <a href="{{ t.url }}" hreflang="{{ t.code }}">{{ t.name }}</a>
