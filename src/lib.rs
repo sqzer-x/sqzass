@@ -4,6 +4,7 @@ pub mod assets;
 pub mod config;
 pub mod content;
 pub mod doctor;
+pub mod emit;
 pub mod error;
 pub mod highlight;
 pub mod i18n;
@@ -56,12 +57,12 @@ pub struct BuildStats {
 pub struct BuildOutput {
     /// 출력 디렉터리 기준 상대 경로 → 내용
     pub files: BTreeMap<String, Vec<u8>>,
-}
-
-impl BuildOutput {
-    pub fn pages(&self) -> usize {
-        self.files.keys().filter(|k| k.ends_with(".html")).count()
-    }
+    /// 실제 콘텐츠 페이지 수.
+    ///
+    /// `.html`을 세지 않는다. 리다이렉트 스텁과 404도 `.html`이지만 사람이 쓴
+    /// 페이지가 아니고, 그걸 세면 "5 pages"라고 보고하면서 콘텐츠는 두 개인
+    /// 상태가 된다.
+    pub pages: usize,
 }
 
 /// 사이트를 빌드해 메모리에 담는다. 디스크는 건드리지 않는다.
@@ -105,13 +106,27 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
         None
     };
 
+    // 사이트가 실제로 내보내는 URL 전체. 이게 있어야 `[설치](/start/install/)` 같은
+    // 평범한 절대 경로 링크도 빌드가 검증할 수 있다 — 지금까지는 `@/`만 봤다.
+    let known = links::KnownUrls {
+        urls: pages
+            .iter()
+            .map(|p| p.url.clone())
+            .chain(assets.manifest.values().cloned())
+            .collect(),
+    };
+    md = md.with_known_urls(known);
+
     assets.write_manifest();
     let templates = Templates::load(root)
         .map_err(Kind::Template.tag())?
         .with_assets(assets.manifest.clone())
         .with_i18n(i18n::load(root).map_err(Kind::Template.tag())?);
 
-    let mut out = BuildOutput::default();
+    let mut out = BuildOutput {
+        pages: pages.len(),
+        ..BuildOutput::default()
+    };
     out.files.extend(assets.files);
 
     // 언어 코드 → 그 언어의 검색 색인 행들.
@@ -138,6 +153,42 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             .with_context(|| format!("{language} 검색 색인을 만들 수 없습니다"))?;
         out.files.insert(search::path(&language), json);
     }
+
+    // 옛 URL을 새 URL로 보내는 스텁. GitHub Pages에는 리다이렉트 규칙이 없으므로
+    // 이걸 빌드가 만들지 않으면 아무도 만들어 주지 않는다.
+    for page in &pages {
+        for alias in &page.front.aliases {
+            let out_path = emit::alias_output_path(alias, page).map_err(Kind::Content.tag())?;
+            let stub = emit::redirect_stub(&page.url, &format!("{}{}", cfg.origin(), page.url));
+            if let Some(prev) = out.files.insert(out_path.clone(), stub.into_bytes()) {
+                let _ = prev;
+                return Err(Kind::Content.tag()(anyhow::anyhow!(
+                    "{}: alias `{alias}` 가 이미 존재하는 출력 `{out_path}` 를 덮어씁니다.\n\
+                     다른 페이지나 다른 alias가 같은 URL을 주장하고 있습니다.",
+                    page.source.display()
+                )));
+            }
+        }
+    }
+
+    // 호스트들이 이름으로 찾는 404. 템플릿이 있을 때만 만든다 — 하이라이트
+    // 스타일시트와 같은 계약이다.
+    if templates.has(emit::NOT_FOUND_PATH) {
+        let html = render_standalone(
+            emit::NOT_FOUND_PATH,
+            &cfg,
+            &site,
+            &templates,
+            highlight_css_url.as_deref(),
+        )
+        .map_err(Kind::Template.tag())?;
+        out.files
+            .insert(emit::NOT_FOUND_PATH.into(), html.into_bytes());
+    }
+
+    out.files.entry(emit::LLMS_PATH.into()).or_insert_with(|| {
+        emit::llms_txt(&cfg.title, &cfg.description, cfg.origin(), &pages).into_bytes()
+    });
 
     // `static/`에 같은 이름이 있으면 그쪽이 이긴다. 직접 넣은 robots.txt가
     // 조용히 무시당하는 것보다는 생성을 건너뛰는 쪽이 낫다.
@@ -190,7 +241,7 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
     }
 
     Ok(BuildStats {
-        pages_written: output.pages(),
+        pages_written: output.pages,
         output_dir: out_dir,
     })
 }
@@ -228,8 +279,12 @@ fn render_page(
     let rendered = md.render_in(&page.language, &page.body);
     if !rendered.unresolved.is_empty() {
         return Err(Kind::Content.tag()(anyhow::anyhow!(
-            "{}: 해석할 수 없는 내부 링크가 있습니다:\n  {}\n\
-             `@/` 는 content/ 기준 소스 경로를 가리켜야 합니다 (예: `@/start/installation.md`).",
+            "{}: 어디도 가리키지 않는 링크가 있습니다:\n  {}\n\n\
+             `@/`로 시작하는 링크는 content/ 기준 소스 경로여야 합니다 \
+             (예: `@/start/installation.md`).\n\
+             `/`로 시작하는 링크는 이 사이트가 실제로 내보내는 URL이어야 합니다.\n\
+             CSS와 JS는 파일명에 해시가 붙으므로 마크다운에서 `/css/main.css`로 \
+             가리킬 수 없습니다 — 템플릿에서 `asset(\"css/main.css\")`를 쓰세요.",
             page.source.display(),
             rendered.unresolved.join("\n  ")
         )));
@@ -285,6 +340,55 @@ fn render_page(
         .map_err(Kind::Template.tag())?;
 
     Ok((html, entry))
+}
+
+/// 페이지에 매이지 않은 템플릿 하나를 렌더한다. 지금은 404뿐이다.
+///
+/// 일부러 이름이 붙은 단일 분기로 둔다. "아무 템플릿이나 아무 경로로 렌더한다"는
+/// 일반 기구를 만들면 그 순간 출력 URL 소유권을 누가 갖는지가 흐려진다.
+fn render_standalone(
+    name: &str,
+    cfg: &Config,
+    site: &Site,
+    templates: &Templates,
+    highlight_css: Option<&str>,
+) -> Result<String> {
+    let language = cfg.default_language.clone();
+    let url = format!("{}/{}", cfg.base_path(), name);
+
+    let site_ctx = SiteCtx {
+        title: cfg.title.clone(),
+        description: cfg.description.clone(),
+        origin: cfg.origin().to_string(),
+        base_path: cfg.base_path().to_string(),
+        language: language.clone(),
+        sections: site::section_ctx(site.sections(&language), site.pages),
+        highlight_css: highlight_css.map(str::to_string),
+    };
+
+    let page_ctx = PageCtx {
+        title: "404".into(),
+        description: String::new(),
+        permalink: format!("{}{url}", cfg.origin()),
+        url,
+        content: String::new(),
+        weight: 0,
+        draft: false,
+        toc: false,
+        toc_entries: Vec::new(),
+        language,
+        translations: Vec::new(),
+        children: Vec::new(),
+        section: None,
+        prev: None,
+        next: None,
+        is_section: false,
+        extra: toml::Table::new(),
+    };
+
+    templates
+        .render(name, context! { site => site_ctx, page => page_ctx })
+        .with_context(|| format!("{name} 렌더 중"))
 }
 
 /// 템플릿 선택은 **명시적**이다. 순서는 딱 넷:

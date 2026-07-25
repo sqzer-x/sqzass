@@ -26,6 +26,8 @@ pub struct FrontMatter {
     pub toc: bool,
     /// 기본은 파일명 stem 추론.
     pub translation_key: Option<String>,
+    /// 이 페이지로 보낼 예전 URL들. 루트 절대 경로여야 한다.
+    pub aliases: Vec<String>,
 
     // --- 섹션(`_index.md`) 전용 ---
     pub sort_by: Option<crate::config::SortBy>,

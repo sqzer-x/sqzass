@@ -16,12 +16,21 @@ pub const PREFIX: &str = "@/";
 /// 언어별 URL 표. `translation_key` → (언어 → URL)
 pub type LinkIndex = BTreeMap<String, BTreeMap<String, String>>;
 
+/// 이 사이트가 실제로 내보내는 URL들. 루트 절대 경로 링크를 검증하는 데 쓴다.
+#[derive(Debug, Clone, Default)]
+pub struct KnownUrls {
+    /// 페이지 URL (`/start/install/`)과 에셋 URL (`/css/main.abc.css`)
+    pub urls: std::collections::BTreeSet<String>,
+}
+
 pub struct Resolver {
     index: LinkIndex,
     language: String,
     default_language: String,
     /// 해석하지 못한 링크. 렌더가 끝난 뒤 빌드를 실패시키는 데 쓴다.
     unresolved: Mutex<Vec<String>>,
+    /// 이 사이트가 내보내는 URL 전체. 비어 있으면 절대 경로 검사를 건너뛴다.
+    known: KnownUrls,
 }
 
 impl Resolver {
@@ -31,7 +40,39 @@ impl Resolver {
             language: language.to_string(),
             default_language: default_language.to_string(),
             unresolved: Mutex::new(Vec::new()),
+            known: KnownUrls::default(),
         }
+    }
+
+    /// 루트 절대 경로 링크를 검증할 수 있게 사이트가 내보내는 URL 목록을 준다.
+    ///
+    /// `@/`만 검사하면 "깨진 참조는 빌드를 멈춘다"가 반쪽이 된다. 사람이 가장
+    /// 자연스럽게 쓰는 건 `[설치](/start/install/)`인데, 그건 지금까지 아무도
+    /// 검사하지 않았고 프로덕션에서 404가 됐다.
+    pub fn with_known_urls(mut self, known: KnownUrls) -> Self {
+        self.known = known;
+        self
+    }
+
+    /// 사이트 안을 가리키는 루트 절대 경로인지. 스킴·프로토콜 상대·`#`·`?`는 제외.
+    fn is_local_absolute(url: &str) -> bool {
+        url.starts_with('/') && !url.starts_with("//")
+    }
+
+    /// 링크가 실제로 존재하는 곳을 가리키는지.
+    fn known_target(&self, url: &str) -> bool {
+        // 프래그먼트와 쿼리를 떼고 본다. `/start/#설치`는 `/start/`를 가리킨다.
+        let path = url.split(['#', '?']).next().unwrap_or(url);
+        if path.is_empty() {
+            return true; // `#anchor` 단독 — 같은 페이지 안이다.
+        }
+        if self.known.urls.contains(path) {
+            return true;
+        }
+        // 디렉터리 URL은 슬래시가 있으나 없으나 같은 곳을 가리킨다. 호스트가
+        // 리다이렉트해 주므로 죽은 링크는 아니다.
+        let with_slash = format!("{path}/");
+        self.known.urls.contains(&with_slash)
     }
 
     /// 해석에 실패한 링크들. 비어 있지 않으면 빌드를 멈춰야 한다.
@@ -66,6 +107,16 @@ impl Resolver {
 impl URLRewriter for Resolver {
     fn to_html(&self, url: &str) -> String {
         if !url.starts_with(PREFIX) {
+            // `@/`가 아니어도 사이트 안을 가리키는 절대 경로라면 존재를 확인한다.
+            if !self.known.urls.is_empty()
+                && Self::is_local_absolute(url)
+                && !self.known_target(url)
+            {
+                self.unresolved
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push(url.to_string());
+            }
             return url.to_string();
         }
         match self.resolve(url) {
@@ -99,6 +150,59 @@ fn translation_key(path: &str) -> String {
             base.to_string()
         }
         _ => stem.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod absolute_link_tests {
+    use super::*;
+    use comrak::options::URLRewriter;
+    use std::collections::BTreeSet;
+
+    fn resolver(urls: &[&str]) -> Resolver {
+        Resolver::new(LinkIndex::new(), "en", "en").with_known_urls(KnownUrls {
+            urls: urls
+                .iter()
+                .map(|s| (*s).to_string())
+                .collect::<BTreeSet<_>>(),
+        })
+    }
+
+    /// `@/`만 검사하면 "깨진 참조는 빌드를 멈춘다"가 반쪽이다. 사람이 가장
+    /// 자연스럽게 쓰는 건 `[설치](/start/install/)`이고, 그건 검사된 적이 없었다.
+    #[test]
+    fn a_dead_absolute_path_is_unresolved() {
+        let r = resolver(&["/about/"]);
+        r.to_html("/nope/");
+        assert_eq!(r.take_unresolved(), vec!["/nope/".to_string()]);
+    }
+
+    #[test]
+    fn live_paths_anchors_and_external_urls_pass() {
+        let r = resolver(&["/about/", "/images/x.png"]);
+        for url in [
+            "/about/",
+            "/about/#section",
+            "/about/?q=1",
+            "/images/x.png",
+            "#same-page",
+            "https://example.com/x",
+            // 프로토콜 상대 URL은 남의 호스트다. 우리 사이트가 아니다.
+            "//cdn.example.com/x",
+            "mailto:a@b.c",
+        ] {
+            r.to_html(url);
+        }
+        assert!(r.take_unresolved().is_empty());
+    }
+
+    /// 알려진 URL이 없으면(에셋 수집 전 등) 검사를 아예 하지 않는다.
+    /// 반쯤 아는 상태로 판정하면 멀쩡한 링크를 죽었다고 말하게 된다.
+    #[test]
+    fn no_known_urls_means_no_checking() {
+        let r = Resolver::new(LinkIndex::new(), "en", "en");
+        r.to_html("/anything/");
+        assert!(r.take_unresolved().is_empty());
     }
 }
 

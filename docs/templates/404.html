@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{#- 호스트가 이름으로 찾는 파일이라 URL이 /404.html로 고정돼 있다. 어느 깊이의
+    경로에서 이 페이지가 뜰지 모르므로 안의 링크는 전부 루트 절대 경로여야 한다 —
+    site.sections가 주는 URL이 이미 그 형태다. #}
+{% block heading %}{{ t("not_found_title") }}{% endblock %}
+
+{% block content %}
+<div class="prose">
+<p>{{ t("not_found_body") }}</p>
+<ul>
+  {%- for s in site.sections %}
+  <li><a href="{{ s.url }}">{{ s.title }}</a></li>
+  {%- endfor %}
+</ul>
+</div>
+{% endblock %}

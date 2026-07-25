@@ -38,6 +38,7 @@ pub struct Renderer {
     highlighter: Option<crate::highlight::Highlighter>,
     links: Option<crate::links::LinkIndex>,
     default_language: String,
+    known: crate::links::KnownUrls,
 }
 
 impl Renderer {
@@ -47,7 +48,15 @@ impl Renderer {
             highlighter: None,
             links: None,
             default_language: "en".into(),
+            known: crate::links::KnownUrls::default(),
         }
+    }
+
+    /// 루트 절대 경로 링크(`/start/install/`)와 이미지도 존재를 검사하게 한다.
+    /// 비워 두면 검사하지 않는다.
+    pub fn with_known_urls(mut self, known: crate::links::KnownUrls) -> Self {
+        self.known = known;
+        self
     }
 
     /// 구문 강조를 켠다. 없으면 코드 블록은 `<code class="language-x">`로만 나간다.
@@ -97,11 +106,10 @@ impl Renderer {
         let mut options = self.options();
 
         let resolver = self.links.as_ref().map(|index| {
-            std::sync::Arc::new(crate::links::Resolver::new(
-                index.clone(),
-                language,
-                &self.default_language,
-            ))
+            std::sync::Arc::new(
+                crate::links::Resolver::new(index.clone(), language, &self.default_language)
+                    .with_known_urls(self.known.clone()),
+            )
         });
         if let Some(r) = &resolver {
             options.extension.link_url_rewriter = Some(r.clone());

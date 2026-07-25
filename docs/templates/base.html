@@ -77,7 +77,8 @@
         <a href="{{ page.section.url }}">{{ page.section.title }}</a>
       </nav>
       {%- endif %}
-      <h1>{{ page.title }}</h1>
+      {#- 페이지가 아닌 템플릿(404)은 자기 제목을 갖는다. #}
+      <h1>{% block heading %}{{ page.title }}{% endblock %}</h1>
       {%- if page.description %}
       <p class="lede">{{ page.description }}</p>
       {%- endif %}

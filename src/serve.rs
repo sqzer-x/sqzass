@@ -74,7 +74,7 @@ pub async fn serve(opts: ServeOptions) -> Result<()> {
 
     let initial = build_to_memory(&build_opts)
         .with_context(|| format!("{}의 첫 빌드 실패", opts.input.display()))?;
-    println!("{} pages", initial.pages());
+    println!("{} pages", initial.pages);
 
     let (tx, _) = broadcast::channel(64);
     let shared: SharedState = Arc::new(Shared {
