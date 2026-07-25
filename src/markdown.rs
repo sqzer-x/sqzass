@@ -29,11 +29,21 @@ pub struct Rendered {
 
 pub struct Renderer {
     cfg: MarkdownConfig,
+    highlighter: Option<crate::highlight::Highlighter>,
 }
 
 impl Renderer {
     pub fn new(cfg: &MarkdownConfig) -> Self {
-        Self { cfg: cfg.clone() }
+        Self {
+            cfg: cfg.clone(),
+            highlighter: None,
+        }
+    }
+
+    /// 구문 강조를 켠다. 없으면 코드 블록은 `<code class="language-x">`로만 나간다.
+    pub fn with_highlighter(mut self, h: crate::highlight::Highlighter) -> Self {
+        self.highlighter = Some(h);
+        self
     }
 
     fn options<'p>(&self) -> Options<'p> {
@@ -67,10 +77,16 @@ impl Renderer {
         let html = {
             let mut plugins = Plugins::default();
             plugins.render.heading_adapter = Some(&headings);
+            if let Some(h) = &self.highlighter {
+                plugins.render.codefence_syntax_highlighter = Some(h);
+            }
             markdown_to_html_with_plugins(body, &options, &plugins)
         };
 
-        Rendered { html, toc: headings.into_toc() }
+        Rendered {
+            html,
+            toc: headings.into_toc(),
+        }
     }
 }
 
@@ -95,11 +111,18 @@ struct CollectorState {
 
 impl HeadingCollector {
     fn new(anchors: HeadingAnchors) -> Self {
-        Self { anchors, state: Mutex::new(CollectorState::default()) }
+        Self {
+            anchors,
+            state: Mutex::new(CollectorState::default()),
+        }
     }
 
     fn into_toc(self) -> Vec<TocEntry> {
-        let flat = self.state.into_inner().unwrap_or_else(|e| e.into_inner()).flat;
+        let flat = self
+            .state
+            .into_inner()
+            .unwrap_or_else(|e| e.into_inner())
+            .flat;
         nest(&flat)
     }
 }
@@ -114,7 +137,8 @@ impl HeadingAdapter for HeadingCollector {
         let id = {
             let mut st = self.state.lock().unwrap_or_else(|e| e.into_inner());
             let id = st.anchorizer.anchorize(&heading.content);
-            st.flat.push((heading.level, id.clone(), heading.content.clone()));
+            st.flat
+                .push((heading.level, id.clone(), heading.content.clone()));
             st.current_id = Some(id.clone());
             id
         };
@@ -257,7 +281,11 @@ mod tests {
             "실제: {}",
             r.html
         );
-        assert!(r.html.contains(r##"href="#getting-started""##), "실제: {}", r.html);
+        assert!(
+            r.html.contains(r##"href="#getting-started""##),
+            "실제: {}",
+            r.html
+        );
     }
 
     #[test]
@@ -279,9 +307,7 @@ mod tests {
 
     #[test]
     fn toc_nests_by_level() {
-        let r = renderer().render(
-            "# A\n\n## A1\n\n### A1a\n\n## A2\n\n# B\n",
-        );
+        let r = renderer().render("# A\n\n## A1\n\n### A1a\n\n## A2\n\n# B\n");
         assert_eq!(r.toc.len(), 2, "최상위는 A와 B: {:?}", r.toc);
         assert_eq!(r.toc[0].title, "A");
         assert_eq!(r.toc[0].children.len(), 2);

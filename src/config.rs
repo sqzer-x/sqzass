@@ -111,17 +111,17 @@ pub enum HeadingAnchors {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct Highlight {
+    pub enabled: bool,
     pub theme_light: String,
     pub theme_dark: String,
-    pub line_numbers: bool,
 }
 
 impl Default for Highlight {
     fn default() -> Self {
         Self {
+            enabled: true,
             theme_light: "InspiredGitHub".into(),
             theme_dark: "base16-ocean.dark".into(),
-            line_numbers: false,
         }
     }
 }

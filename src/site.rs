@@ -56,12 +56,20 @@ impl<'a> Site<'a> {
             .map(|(lang, idxs)| (lang, build_tree(pages, &idxs, cfg)))
             .collect();
 
-        Self { cfg, pages, trees, translations }
+        Self {
+            cfg,
+            pages,
+            trees,
+            translations,
+        }
     }
 
     /// 해당 언어의 최상위 섹션들.
     pub fn sections(&self, language: &str) -> &[Section] {
-        self.trees.get(language).map(|v| v.as_slice()).unwrap_or(&[])
+        self.trees
+            .get(language)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// 페이지가 속한 섹션의 `page_template`. 템플릿 선택 단계에서 쓴다.
@@ -174,7 +182,10 @@ fn dirs_of(p: &Page) -> Vec<String> {
 fn ensure_section<'s>(root: &'s mut Section, dirs: &[String]) -> &'s mut Section {
     let mut cur = root;
     for (depth, seg) in dirs.iter().enumerate() {
-        let pos = cur.subsections.iter().position(|s| s.path.last() == Some(seg));
+        let pos = cur
+            .subsections
+            .iter()
+            .position(|s| s.path.last() == Some(seg));
         let pos = match pos {
             Some(p) => p,
             None => {
@@ -204,7 +215,11 @@ fn ensure_section<'s>(root: &'s mut Section, dirs: &[String]) -> &'s mut Section
 fn find_section<'s>(sections: &'s [Section], dirs: &[String]) -> Option<&'s Section> {
     let (first, rest) = dirs.split_first()?;
     let node = sections.iter().find(|s| s.path.last() == Some(first))?;
-    if rest.is_empty() { Some(node) } else { find_section(&node.subsections, rest) }
+    if rest.is_empty() {
+        Some(node)
+    } else {
+        find_section(&node.subsections, rest)
+    }
 }
 
 /// 섹션 자신의 `sort_by`가 있으면 그걸, 없으면 `[nav] sort_by`를 쓴다.
@@ -402,22 +417,26 @@ mod tests {
             .iter()
             .map(|&i| pages[i].title.as_str())
             .collect();
-        assert_eq!(titles, vec!["A", "B", "C"], "섹션의 sort_by가 전역을 못 이겼다");
+        assert_eq!(
+            titles,
+            vec!["A", "B", "C"],
+            "섹션의 sort_by가 전역을 못 이겼다"
+        );
     }
 
     #[test]
     fn directory_without_index_still_appears() {
         // `_index.md`를 깜빡해도 페이지가 사이드바에서 사라지면 안 된다.
         let cfg = cfg();
-        let f = Fixture::new(
-            "noindex",
-            &[("guides/howto.md", &fm("How to", ""))],
-        );
+        let f = Fixture::new("noindex", &[("guides/howto.md", &fm("How to", ""))]);
         let pages = f.pages(&cfg);
         let site = Site::build(&pages, &cfg);
         let en = site.sections("en");
         assert_eq!(en.len(), 1);
-        assert_eq!(en[0].title, "guides", "디렉터리 이름이 제목 대체값이어야 한다");
+        assert_eq!(
+            en[0].title, "guides",
+            "디렉터리 이름이 제목 대체값이어야 한다"
+        );
         assert_eq!(en[0].pages.len(), 1);
     }
 
@@ -455,7 +474,10 @@ mod tests {
         let f = Fixture::new(
             "ptmpl",
             &[
-                ("docs/_index.md", &fm("Docs", "page_template = \"doc.html\"\n")),
+                (
+                    "docs/_index.md",
+                    &fm("Docs", "page_template = \"doc.html\"\n"),
+                ),
                 ("docs/x.md", &fm("X", "")),
                 ("other.md", &fm("Other", "")),
             ],
@@ -475,8 +497,15 @@ mod tests {
         let mut a = comrak::Anchorizer::new();
         assert_eq!(a.anchorize("설치"), "설치");
         assert_eq!(a.anchorize("정적 사이트 생성기"), "정적-사이트-생성기");
-        assert_eq!(a.anchorize("설치"), "설치-1", "중복 제목 dedupe가 동작해야 한다");
-        assert_eq!(a.anchorize("한글 제목 with English"), "한글-제목-with-english");
+        assert_eq!(
+            a.anchorize("설치"),
+            "설치-1",
+            "중복 제목 dedupe가 동작해야 한다"
+        );
+        assert_eq!(
+            a.anchorize("한글 제목 with English"),
+            "한글-제목-with-english"
+        );
         let _ = Path::new("");
     }
 }

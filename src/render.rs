@@ -163,6 +163,8 @@ pub struct SiteCtx {
     pub language: String,
     /// 이 언어의 최상위 섹션들. 사이드바는 여기서 만든다.
     pub sections: Vec<crate::site::SectionCtx>,
+    /// 생성된 하이라이트 스타일시트 URL. 강조가 꺼져 있으면 `None`.
+    pub highlight_css: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -273,7 +275,10 @@ mod tests {
     fn urls_keep_their_slashes() {
         // minijinja 기본 이스케이퍼는 `/`를 `&#x2f;`로 바꿔서 사이트의 모든 링크를
         // 읽을 수 없게 만든다. 커스텀 포매터로 되돌린 것을 고정한다.
-        let site = Site::new("slash", &[("page.html", r#"<a href="{{ page.url }}">x</a>"#)]);
+        let site = Site::new(
+            "slash",
+            &[("page.html", r#"<a href="{{ page.url }}">x</a>"#)],
+        );
         let out = site
             .templates()
             .render(
@@ -294,7 +299,10 @@ mod tests {
             ("a & b", "a &amp; b"),
             ("say \"hi\"", "say &quot;hi&quot;"),
             ("it's", "it&#x27;s"),
-            ("</script><img onerror=x>", "&lt;/script&gt;&lt;img onerror=x&gt;"),
+            (
+                "</script><img onerror=x>",
+                "&lt;/script&gt;&lt;img onerror=x&gt;",
+            ),
         ] {
             let out = t
                 .render("page.html", context! { page => context!{ t => input } })

@@ -8,6 +8,9 @@
 <title>{% if page.url == "/" or page.url == "/" ~ page.language ~ "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
 {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
 <link rel="canonical" href="{{ page.permalink }}">
+{%- if site.highlight_css %}
+<link rel="stylesheet" href="{{ site.highlight_css }}">
+{%- endif %}
 {%- for t in page.translations %}
 <link rel="alternate" hreflang="{{ t.code }}" href="{{ site.base_url }}{{ t.url }}">
 {%- endfor %}

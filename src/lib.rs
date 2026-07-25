@@ -2,6 +2,7 @@
 
 pub mod config;
 pub mod content;
+pub mod highlight;
 pub mod markdown;
 pub mod render;
 pub mod site;
@@ -26,6 +27,10 @@ pub struct BuildOptions {
     pub base_url: Option<String>,
 }
 
+/// 생성된 하이라이트 스타일시트의 출력 경로. 에셋 파이프라인이 들어오면
+/// 콘텐츠 해시가 붙은 이름으로 바뀐다.
+const HIGHLIGHT_CSS_URL: &str = "/assets/highlight.css";
+
 #[derive(Debug, Default)]
 pub struct BuildStats {
     pub pages_written: usize,
@@ -45,7 +50,14 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
     let pages = content::discover(root, &cfg, drafts)?;
     let site = Site::build(&pages, &cfg);
     let templates = Templates::load(root)?;
-    let md = markdown::Renderer::new(&cfg.markdown);
+
+    let mut md = markdown::Renderer::new(&cfg.markdown);
+    let highlight_css_url = if cfg.highlight.enabled {
+        md = md.with_highlighter(highlight::Highlighter::new());
+        Some(HIGHLIGHT_CSS_URL.to_string())
+    } else {
+        None
+    };
 
     // 출력 디렉터리를 매번 새로 만든다. 지운 페이지가 유령으로 남는 걸 막는다.
     if out_dir.exists() {
@@ -53,9 +65,29 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
             .with_context(|| format!("{}을(를) 비울 수 없습니다", out_dir.display()))?;
     }
 
+    // 하이라이트 스타일시트는 테마에서 생성한다. HTML은 클래스만 담고 있으므로
+    // 이 파일 하나를 바꾸면 사이트 전체의 코드 색이 바뀐다.
+    if cfg.highlight.enabled {
+        let css = highlight::stylesheet(&cfg.highlight)?;
+        let dest = out_dir.join(HIGHLIGHT_CSS_URL.trim_start_matches('/'));
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("{}을(를) 만들 수 없습니다", parent.display()))?;
+        }
+        std::fs::write(&dest, css)
+            .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))?;
+    }
+
     let mut written = 0usize;
     for page in &pages {
-        let html = render_page(page, &site, &cfg, &templates, &md)?;
+        let html = render_page(
+            page,
+            &site,
+            &cfg,
+            &templates,
+            &md,
+            highlight_css_url.as_deref(),
+        )?;
         let dest = out_dir.join(&page.out_path);
         if let Some(parent) = dest.parent() {
             std::fs::create_dir_all(parent)
@@ -91,6 +123,7 @@ fn render_page(
     cfg: &Config,
     templates: &Templates,
     md: &markdown::Renderer,
+    highlight_css: Option<&str>,
 ) -> Result<String> {
     let template = select_template(page, site, templates)?;
 
@@ -100,6 +133,7 @@ fn render_page(
         base_url: cfg.base_url_trimmed().to_string(),
         language: page.language.clone(),
         sections: site::section_ctx(site.sections(&page.language), site.pages),
+        highlight_css: highlight_css.map(str::to_string),
     };
 
     let rendered = md.render(&page.body);
