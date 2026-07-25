@@ -47,7 +47,24 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.retry.outputs.page_url }}
     steps:
+      # 위의 concurrency는 **워크플로 실행**을 직렬화한다. Pages 배포는 그보다 오래
+      # 산다 — 앞선 실행이 끝난 뒤에도 GitHub 쪽에서 처리 중일 수 있고, 그 창에
+      # 들어가면 400 "due to in progress deployment"로 죽는다. 커밋을 연달아 밀면
+      # 실제로 걸린다.
+      #
+      # 앞선 배포는 어차피 곧 끝나므로, 기다렸다 한 번 더 시도하면 된다. 배포가
+      # 상태를 바꾸기 전에 실패하는 것이라 재시도가 사이트를 반쯤 갱신된 상태로
+      # 만들지 않는다.
       - id: deployment
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Wait for the previous deployment to settle
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 90
+
+      - id: retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v5
