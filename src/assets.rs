@@ -24,12 +24,18 @@ pub struct Assets {
     pub files: BTreeMap<String, Vec<u8>>,
     /// 논리 경로(`css/main.css`) → 출력 URL(`/css/main.a1b2c3d4.css`)
     pub manifest: BTreeMap<String, String>,
+    /// 사이트가 도메인 루트가 아닐 때의 접두사. 페이지 URL과 같은 규칙을 따라야
+    /// `<link href>`와 내비게이션 링크가 같은 곳을 가리킨다.
+    base_path: String,
 }
 
 impl Assets {
     /// `static/` 아래를 전부 읽어들인다.
-    pub fn collect(root: &Path, cfg: &AssetsConfig) -> Result<Self> {
-        let mut out = Self::default();
+    pub fn collect(root: &Path, cfg: &AssetsConfig, base_path: &str) -> Result<Self> {
+        let mut out = Self {
+            base_path: base_path.to_string(),
+            ..Self::default()
+        };
         let dir = root.join(&cfg.source_dir);
         if !dir.is_dir() {
             return Ok(out);
@@ -64,8 +70,9 @@ impl Assets {
         } else {
             logical.to_string()
         };
+        let base = &self.base_path;
         self.manifest
-            .insert(logical.to_string(), format!("/{out_path}"));
+            .insert(logical.to_string(), format!("{base}/{out_path}"));
         self.files.insert(out_path, bytes);
     }
 
@@ -186,10 +193,23 @@ mod tests {
         std::fs::write(sdir.join("main.css"), "body{color:red}").unwrap();
         std::fs::write(root.join("static/CNAME"), "example.com").unwrap();
 
-        let a = Assets::collect(&root, &cfg()).unwrap();
+        let a = Assets::collect(&root, &cfg(), "").unwrap();
         assert!(a.url("css/main.css").unwrap().starts_with("/css/main."));
         assert_eq!(a.url("CNAME"), Some("/CNAME"));
         assert_eq!(a.files.len(), 2);
+
+        // 서브경로에 올라가는 사이트는 에셋 URL도 같은 접두사를 가져야 한다.
+        // 페이지 링크만 접두사를 갖고 스타일시트는 안 갖는 상태가 가장 나쁘다:
+        // 사이트는 뜨는데 아무 스타일도 안 먹는다.
+        let sub = Assets::collect(&root, &cfg(), "/repo").unwrap();
+        assert!(
+            sub.url("css/main.css")
+                .unwrap()
+                .starts_with("/repo/css/main."),
+            "실제: {:?}",
+            sub.url("css/main.css")
+        );
+        assert_eq!(sub.url("CNAME"), Some("/repo/CNAME"));
 
         std::fs::remove_dir_all(&root).ok();
     }
@@ -197,7 +217,7 @@ mod tests {
     #[test]
     fn missing_static_dir_is_not_an_error() {
         let root = std::env::temp_dir().join("sqzass-assets-nonexistent-xyz");
-        let a = Assets::collect(&root, &cfg()).unwrap();
+        let a = Assets::collect(&root, &cfg(), "").unwrap();
         assert!(a.files.is_empty());
     }
 }

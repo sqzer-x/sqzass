@@ -9,8 +9,6 @@ use std::path::Path;
 
 pub const CONFIG_FILE: &str = "sqzass.toml";
 
-/// `sqzass.toml`이 가질 수 있는 최상위 키. 오타 감지에 쓴다.
-
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -189,15 +187,73 @@ impl Config {
         Ok(())
     }
 
-    /// `base_url`에서 뒤쪽 슬래시를 제거한 형태. URL 조립에 쓴다.
+    /// `base_url`에서 뒤쪽 슬래시를 제거한 형태.
     pub fn base_url_trimmed(&self) -> &str {
         self.base_url.trim_end_matches('/')
+    }
+
+    /// 스킴과 호스트만. `https://user.github.io/repo` → `https://user.github.io`
+    ///
+    /// 절대 URL(canonical, sitemap, OpenGraph)을 조립할 때 쓴다. 페이지 URL이 이미
+    /// 서브경로를 품고 있으므로 여기에 경로가 또 들어가면 두 번 붙는다.
+    pub fn origin(&self) -> &str {
+        let trimmed = self.base_url_trimmed();
+        // `://` 다음의 첫 슬래시가 경로의 시작이다. 스킴이 없으면 경로도 없다고 본다.
+        match trimmed.find("://") {
+            Some(i) => match trimmed[i + 3..].find('/') {
+                Some(j) => &trimmed[..i + 3 + j],
+                None => trimmed,
+            },
+            None => trimmed,
+        }
+    }
+
+    /// 사이트가 도메인 루트가 아닌 곳에 놓일 때의 경로. 루트면 빈 문자열.
+    ///
+    /// `https://user.github.io/repo` → `/repo`
+    ///
+    /// GitHub·GitLab·Codeberg의 **프로젝트 페이지가 기본으로 이 모양**이다. 도메인을
+    /// 따로 사지 않은 사람이 가장 먼저 만나는 형태이므로, 여기서 URL이 어긋나면
+    /// 사이트 전체가 404가 된다 — 빌드는 성공한 채로.
+    pub fn base_path(&self) -> &str {
+        let trimmed = self.base_url_trimmed();
+        let origin = self.origin();
+        trimmed.strip_prefix(origin).unwrap_or("")
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 프로젝트 페이지(`user.github.io/repo`)는 도메인을 사지 않은 사람의 기본
+    /// 상황이다. 여기서 origin과 경로를 잘못 나누면 사이트 전체가 404가 된다.
+    #[test]
+    fn splits_origin_from_base_path() {
+        let cfg = |url: &str| -> Config {
+            toml::from_str(&format!("title = \"t\"\nbase_url = \"{url}\"\n")).unwrap()
+        };
+
+        let root = cfg("https://sqzass.sqzer.com");
+        assert_eq!(root.origin(), "https://sqzass.sqzer.com");
+        assert_eq!(root.base_path(), "", "루트 사이트에는 접두사가 없다");
+
+        let trailing = cfg("https://sqzass.sqzer.com/");
+        assert_eq!(trailing.origin(), "https://sqzass.sqzer.com");
+        assert_eq!(trailing.base_path(), "");
+
+        let project = cfg("https://user.github.io/repo");
+        assert_eq!(project.origin(), "https://user.github.io");
+        assert_eq!(project.base_path(), "/repo");
+
+        let nested = cfg("https://example.com/a/b/");
+        assert_eq!(nested.origin(), "https://example.com");
+        assert_eq!(nested.base_path(), "/a/b");
+
+        let port = cfg("http://localhost:3000/site");
+        assert_eq!(port.origin(), "http://localhost:3000");
+        assert_eq!(port.base_path(), "/site");
+    }
 
     /// 조용히 무시되는 설정은 "깨진 참조는 빌드를 멈춘다"의 정확한 위반이다.
     #[test]

@@ -1,7 +1,9 @@
 {% from "partials/sidebar.html" import nav %}
 {% from "partials/toc.html" import toc_list %}
 {%- set ko = page.language == "ko" %}
-{%- set home = "/ko/" if ko else "/" %}
+{#- 서브경로에 올라갈 수도 있으므로 홈 링크에 site.base_path를 붙인다.
+    페이지 URL들은 이미 이 접두사를 품고 있어서 손댈 필요가 없다. #}
+{%- set home = site.base_path ~ ("/ko/" if ko else "/") %}
 <!doctype html>
 {#- The default is written here rather than left to `prefers-color-scheme`, so
     a reader with a light OS still gets the dark page the design assumes — and,
@@ -17,7 +19,7 @@
 {#- `lang`이지 `t`가 아니다. `t`는 번역 함수이고, 루프 변수가 그 이름을 가리면
     이 블록 안에서 라벨을 하나 넣는 순간 조용히 깨진다. #}
 {%- for lang in page.translations %}
-<link rel="alternate" hreflang="{{ lang.code }}" href="{{ site.base_url }}{{ lang.url }}">
+<link rel="alternate" hreflang="{{ lang.code }}" href="{{ site.origin }}{{ lang.url }}">
 {%- endfor %}
 <link rel="stylesheet" href="{{ asset("css/main.css") }}">
 {%- if site.highlight_css %}
@@ -47,7 +49,7 @@
 
   <div class="tools">
     <button id="search-trigger" class="search-trigger" type="button"
-            data-index="/search-{{ page.language }}.json">
+            data-index="{{ site.base_path }}/search-{{ page.language }}.json">
       {#- The label is replaced with the reader's own modifier by search.js;
           this is the value someone with JavaScript off sees. #}
       <span>{{ t("search") }}</span><kbd>Ctrl /</kbd>

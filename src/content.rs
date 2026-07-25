@@ -219,10 +219,14 @@ fn build_url(name: &NameParts, slug: &str, cfg: &Config) -> (String, PathBuf) {
         segments.push(slug.to_string());
     }
 
+    // URL에는 서브경로가 들어가고 출력 경로에는 들어가지 않는다. 호스트가 서빙하는
+    // 루트가 곧 출력 디렉터리이고, 서브경로는 그 루트가 도메인 어디에 놓이는지의
+    // 문제이기 때문이다.
+    let base = cfg.base_path();
     let url = if segments.is_empty() {
-        "/".to_string()
+        format!("{base}/")
     } else {
-        format!("/{}/", segments.join("/"))
+        format!("{base}/{}/", segments.join("/"))
     };
 
     let mut out = PathBuf::new();
@@ -327,6 +331,24 @@ mod tests {
 
     /// front matter 오타도 조용히 무시하지 않는다. 그리고 에러가 가리키는 줄은
     /// **원본 파일의** 줄이어야 한다 — 펜스를 손으로 자른 이유가 그것이다.
+    /// URL에는 서브경로가 들어가고 출력 경로에는 들어가지 않는다. 호스트가 서빙하는
+    /// 루트가 곧 출력 디렉터리이기 때문이다.
+    #[test]
+    fn base_path_reaches_urls_but_not_output_paths() {
+        let cfg: Config =
+            toml::from_str("title = \"t\"\nbase_url = \"https://user.github.io/repo\"\n").unwrap();
+
+        let parts = NameParts::parse(Path::new("start/install.md"), &cfg);
+        let (url, out) = build_url(&parts, &parts.stem, &cfg);
+        assert_eq!(url, "/repo/start/install/");
+        assert_eq!(out, Path::new("start/install/index.html"));
+
+        let root = NameParts::parse(Path::new("_index.md"), &cfg);
+        let (url, out) = build_url(&root, &root.stem, &cfg);
+        assert_eq!(url, "/repo/");
+        assert_eq!(out, Path::new("index.html"));
+    }
+
     #[test]
     fn unknown_front_matter_key_errors_at_the_real_line() {
         let dir = std::env::temp_dir().join(format!("sqzass-fm-{}", std::process::id()));

@@ -89,7 +89,8 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     let site = Site::build(&pages, &cfg);
 
     // 에셋을 먼저 처리해야 템플릿이 해시가 붙은 최종 URL을 조회할 수 있다.
-    let mut assets = assets::Assets::collect(root, &cfg.assets).map_err(Kind::Io.tag())?;
+    let mut assets =
+        assets::Assets::collect(root, &cfg.assets, cfg.base_path()).map_err(Kind::Io.tag())?;
 
     let mut md =
         markdown::Renderer::new(&cfg.markdown).with_links(site.link_index(), &cfg.default_language);
@@ -140,13 +141,13 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
 
     // `static/`에 같은 이름이 있으면 그쪽이 이긴다. 직접 넣은 robots.txt가
     // 조용히 무시당하는 것보다는 생성을 건너뛰는 쪽이 낫다.
-    let base = cfg.base_url_trimmed();
+    let origin = cfg.origin();
     out.files
         .entry(seo::SITEMAP_PATH.into())
-        .or_insert_with(|| seo::sitemap(&pages, &site, base).into_bytes());
+        .or_insert_with(|| seo::sitemap(&pages, &site, origin).into_bytes());
     out.files
         .entry(seo::ROBOTS_PATH.into())
-        .or_insert_with(|| seo::robots(base).into_bytes());
+        .or_insert_with(|| seo::robots(origin, cfg.base_path()).into_bytes());
 
     // GitHub Pages는 이 파일이 없으면 출력을 Jekyll로 한 번 더 굴려서
     // `_`로 시작하는 디렉터리를 통째로 삼킨다.
@@ -217,7 +218,8 @@ fn render_page(
     let site_ctx = SiteCtx {
         title: cfg.title.clone(),
         description: cfg.description.clone(),
-        base_url: cfg.base_url_trimmed().to_string(),
+        origin: cfg.origin().to_string(),
+        base_path: cfg.base_path().to_string(),
         language: page.language.clone(),
         sections: site::section_ctx(site.sections(&page.language), site.pages),
         highlight_css: highlight_css.map(str::to_string),
@@ -257,7 +259,8 @@ fn render_page(
         title: page.title.clone(),
         description: page.front.description.clone(),
         url: page.url.clone(),
-        permalink: format!("{}{}", cfg.base_url_trimmed(), page.url),
+        // page.url이 서브경로를 품고 있으므로 origin만 붙인다.
+        permalink: format!("{}{}", cfg.origin(), page.url),
         content: rendered.html,
         weight: page.front.weight,
         draft: page.front.draft,
@@ -273,6 +276,7 @@ fn render_page(
         prev,
         next,
         is_section: page.is_section,
+        extra: page.front.extra.clone(),
     };
 
     let html = templates

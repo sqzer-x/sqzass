@@ -201,7 +201,12 @@ fn format_value(out: &mut Output, state: &State, value: &Value) -> Result<(), mi
 pub struct SiteCtx {
     pub title: String,
     pub description: String,
-    pub base_url: String,
+    /// 스킴과 호스트만. 절대 URL은 `site.origin ~ page.url`로 만든다 — 페이지 URL이
+    /// 이미 서브경로를 품고 있어서, 설정한 `base_url`을 그대로 붙이면 두 번 들어간다.
+    pub origin: String,
+    /// 사이트가 도메인 루트가 아닐 때의 경로 접두사. 루트면 빈 문자열.
+    /// 템플릿이 직접 쓰는 URL(홈 링크 등)에만 필요하다.
+    pub base_path: String,
     /// 지금 렌더 중인 페이지의 언어.
     pub language: String,
     /// 이 언어의 최상위 섹션들. 사이드바는 여기서 만든다.
@@ -236,6 +241,8 @@ pub struct PageCtx {
     pub next: Option<crate::site::PageRefCtx>,
     /// 섹션 인덱스인지. 템플릿이 목록을 그릴지 판단한다.
     pub is_section: bool,
+    /// front matter의 `[extra]`. sqzass는 여기를 읽지 않는다 — 템플릿이 읽는다.
+    pub extra: toml::Table,
 }
 
 #[cfg(test)]

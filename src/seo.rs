@@ -24,7 +24,7 @@ pub const ROBOTS_PATH: &str = "robots.txt";
 /// `actions/checkout`은 기본이 얕은 클론이라, 조용히 모든 페이지가 같은 날짜를
 /// 갖게 된다. 틀린 `lastmod`는 없는 것보다 나쁘다 — 구글은 부정확한 값을 보면
 /// 그 사이트의 `lastmod`를 통째로 무시한다.
-pub fn sitemap(pages: &[Page], site: &Site, base_url: &str) -> String {
+pub fn sitemap(pages: &[Page], site: &Site, origin: &str) -> String {
     let mut out = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
          <urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" \
@@ -33,7 +33,7 @@ pub fn sitemap(pages: &[Page], site: &Site, base_url: &str) -> String {
 
     for page in pages {
         out.push_str("  <url>\n    <loc>");
-        escape_into(&mut out, &format!("{base_url}{}", page.url));
+        escape_into(&mut out, &format!("{origin}{}", page.url));
         out.push_str("</loc>\n");
 
         // 번역이 있는 페이지만 대체 링크를 낸다. 혼자인 페이지에 자기 자신만
@@ -44,7 +44,7 @@ pub fn sitemap(pages: &[Page], site: &Site, base_url: &str) -> String {
                 out.push_str("    <xhtml:link rel=\"alternate\" hreflang=\"");
                 escape_into(&mut out, &code);
                 out.push_str("\" href=\"");
-                escape_into(&mut out, &format!("{base_url}{url}"));
+                escape_into(&mut out, &format!("{origin}{url}"));
                 out.push_str("\"/>\n");
             }
         }
@@ -58,8 +58,9 @@ pub fn sitemap(pages: &[Page], site: &Site, base_url: &str) -> String {
 /// 전부 허용하고 sitemap을 가리킨다.
 ///
 /// 크롤러를 막고 싶으면 `static/robots.txt`에 직접 쓰면 된다.
-pub fn robots(base_url: &str) -> String {
-    format!("User-agent: *\nAllow: /\n\nSitemap: {base_url}/{SITEMAP_PATH}\n")
+pub fn robots(origin: &str, base_path: &str) -> String {
+    // sitemap은 출력 루트에 있고, 출력 루트는 도메인의 `base_path` 아래에 놓인다.
+    format!("User-agent: *\nAllow: {base_path}/\n\nSitemap: {origin}{base_path}/{SITEMAP_PATH}\n")
 }
 
 /// XML 텍스트/속성값 이스케이프.
@@ -85,7 +86,7 @@ mod tests {
 
     #[test]
     fn robots_points_at_the_sitemap() {
-        let r = robots("https://example.com");
+        let r = robots("https://example.com", "");
         assert!(
             r.contains("Sitemap: https://example.com/sitemap.xml"),
             "{r}"
