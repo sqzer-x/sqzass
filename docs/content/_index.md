@@ -31,15 +31,17 @@ an error, not a warning you scroll past.
 **The same input produces the same bytes.** Two builds are byte-identical, and
 CI checks it on every push.
 
-**Bilingual from the start.** A page's translations are linked automatically, and
-a language's navigation contains only pages that exist in it, so an untranslated
-page cannot leave a dead link behind.
+**Korean was not bolted on afterwards.** A page's translations are linked
+automatically, and a language's navigation contains only pages that exist in it,
+so an untranslated page cannot leave a dead link behind. [Search](@/features/search.md)
+matches substrings rather than words, which is the only way `최적화` inside
+`검색엔진최적화` is ever found.
 
 ## Status
 
 Early, and honest about it: syntax highlighting, navigation, the table of
-contents, the asset pipeline and the dev server work. Search, feeds and themes
-do not exist yet. Start at [Getting started](@/start/_index.md).
+contents, the asset pipeline, the dev server and search all work. Feeds and a
+theme system do not exist yet. Start at [Getting started](@/start/_index.md).
 
 [comrak]: https://github.com/kivikakk/comrak
 [minijinja]: https://github.com/mitsuhiko/minijinja
