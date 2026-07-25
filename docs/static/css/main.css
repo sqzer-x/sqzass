@@ -108,6 +108,9 @@ a:hover { text-decoration-thickness: 2px; }
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--mono);
   font-size: var(--s1);
   font-weight: 600;
@@ -116,6 +119,17 @@ a:hover { text-decoration-thickness: 2px; }
   text-decoration: none;
 }
 .brand:hover { color: var(--accent); }
+
+/* 검은 선화라 다크 배경에서는 그냥 안 보인다. 파일을 두 벌 두는 대신 반전한다 —
+   순수 흑백 선화에서는 반전이 정확히 흰 선을 만든다.
+   크기는 손등 해칭이 뭉개지지 않는 선까지 키웠다. 이보다 작으면 그림이 아니라
+   얼룩으로 읽힌다. */
+.brand img {
+  width: 2.2em;
+  height: 2.2em;
+  filter: invert(1);
+}
+:root[data-theme="light"] .brand img { filter: none; }
 
 /* The section list. Same data as the sidebar, one level up, so a reader can
    cross between parts of the documentation without returning to the index. */

@@ -16,6 +16,12 @@
 <title>{% if page.url == home %}{{ site.title }} — {{ site.description }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
 {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
 <link rel="canonical" href="{{ page.permalink }}">
+{#- 파비콘은 CSS 필터가 닿지 않는다. 탭 배경이 어두울 때 검은 선화는 보이지
+    않으므로 흰 선 버전을 따로 준다. media를 이해 못 하는 브라우저는 마지막
+    것을 쓰므로, 밝은 탭이 기본인 쪽을 뒤에 둔다. #}
+<link rel="icon" type="image/png" media="(prefers-color-scheme: dark)" href="{{ asset("images/favicon-dark.png") }}">
+<link rel="icon" type="image/png" href="{{ asset("images/favicon.png") }}">
+<link rel="apple-touch-icon" href="{{ asset("images/favicon.png") }}">
 {#- `lang`이지 `t`가 아니다. `t`는 번역 함수이고, 루프 변수가 그 이름을 가리면
     이 블록 안에서 라벨을 하나 넣는 순간 조용히 깨진다. #}
 {%- for lang in page.translations %}
@@ -49,7 +55,12 @@
 <a class="skip" href="#content">{{ t("skip_to_content") }}</a>
 
 <header class="masthead">
-  <a class="brand" href="{{ home }}">{{ site.title }}</a>
+  {#- alt는 비운다. 바로 옆 텍스트가 이미 같은 이름을 말하므로, 여기에 이름을
+      또 넣으면 스크린리더가 "sqzass sqzass"라고 읽는다. #}
+  <a class="brand" href="{{ home }}">
+    <img src="{{ asset("images/logo.png") }}" alt="" width="121" height="120">
+    <span>{{ site.title }}</span>
+  </a>
 
   {#- The top nav is the section list. It is the same data the sidebar draws,
       one level up, so a reader can move between parts of the documentation
