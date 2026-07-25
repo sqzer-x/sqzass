@@ -1,0 +1,53 @@
+name: Deploy docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 직렬로. 진행 중인 배포를 취소하면 사이트가 반쯤 갱신된 상태로 남을 수 있다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/configure-pages@v6
+
+      - name: Build the site
+        run: cargo run --quiet -- build -i docs
+
+      # 커스텀 도메인. sqzass의 에셋 파이프라인(M1)이 들어오면 docs/static/ 아래
+      # 파일이 자동으로 복사되므로 이 단계는 그때 삭제한다.
+      - name: Copy static files
+        run: cp -r docs/static/. docs/public/
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

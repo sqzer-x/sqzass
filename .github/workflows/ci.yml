@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test
+
+      # sqzass가 자기 문서 사이트를 빌드할 수 있어야 한다. 이게 회귀 테스트다 —
+      # 단위 테스트가 놓치는 통합 문제를 실제 사이트가 잡는다.
+      - name: Build the docs site
+        run: cargo run --quiet -- build -i docs
+
+      # 같은 입력이면 같은 바이트가 나와야 한다. 두 페이지가 같은 출력 URL을
+      # 주장할 때 파일 순회 순서에 따라 결과가 달라지는 종류의 버그를 잡는다.
+      - name: Build is reproducible
+        run: |
+          cargo run --quiet -- build -i docs -o "$RUNNER_TEMP/a"
+          cargo run --quiet -- build -i docs -o "$RUNNER_TEMP/b"
+          diff -r "$RUNNER_TEMP/a" "$RUNNER_TEMP/b"
