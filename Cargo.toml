@@ -60,7 +60,14 @@ walkdir   = "2"
 
 # --- M3 ---
 # pagefind 기본 피처 serve가 actix-web + actix-files를 끌고 온다. 반드시 끌 것.
-# pagefind = { version = "1.5", default-features = false, features = ["extended"], optional = true }
+# 그러면 이번엔 pagefind가 선언을 빠뜨린 tokio 피처를 우리가 채워야 한다:
+#   위 tokio에 "fs", "io-util" 추가. 없으면 AsyncWriteExt를 못 찾아 컴파일이 깨진다.
+# ⚠️ extended 피처는 켜지 않는다. 켜는 건 zh/ja/th 분절뿐인데(jieba + lindera-unidic)
+#    바이너리가 +48.6 MB 늘고, 한국어 검색 결과는 켠 빌드와 끈 빌드가 완전히 동일하다.
+#    한국어를 형태소로 쪼개는 charabia "korean"은 더 나쁘다 — ko-dic이 외래어를 모르는
+#    범용 국어사전이라 `템플릿은`을 `템플/릿/은`으로 뭉개서 recall이 무너진다.
+#    2000페이지 한국어 코퍼스 실측: 정답 1018건 → 27건.
+# pagefind = { version = "1.5", default-features = false, optional = true }
 
 # --- M3 이후 ---
 # rayon = "1"   # 병렬 렌더. 문서 사이트 ~60페이지엔 불필요하고, 출력 URL 충돌 시
