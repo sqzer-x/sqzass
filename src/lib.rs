@@ -1,5 +1,6 @@
 //! sqzass — Rust로 만든 정적 사이트 생성기.
 
+pub mod assets;
 pub mod config;
 pub mod content;
 pub mod highlight;
@@ -29,9 +30,8 @@ pub struct BuildOptions {
     pub base_url: Option<String>,
 }
 
-/// 생성된 하이라이트 스타일시트의 출력 경로. 에셋 파이프라인이 들어오면
-/// 콘텐츠 해시가 붙은 이름으로 바뀐다.
-const HIGHLIGHT_CSS_URL: &str = "/assets/highlight.css";
+/// 생성된 하이라이트 스타일시트의 논리 경로. 다른 에셋과 같은 규칙으로 해시가 붙는다.
+const HIGHLIGHT_ASSET: &str = "assets/highlight.css";
 
 #[derive(Debug, Default)]
 pub struct BuildStats {
@@ -67,27 +67,27 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
 
     let pages = content::discover(root, &cfg, drafts)?;
     let site = Site::build(&pages, &cfg);
-    let templates = Templates::load(root)?;
+
+    // 에셋을 먼저 처리해야 템플릿이 해시가 붙은 최종 URL을 조회할 수 있다.
+    let mut assets = assets::Assets::collect(root, &cfg.assets)?;
 
     let mut md = markdown::Renderer::new(&cfg.markdown);
     let highlight_css_url = if cfg.highlight.enabled {
         md = md.with_highlighter(highlight::Highlighter::new());
-        Some(HIGHLIGHT_CSS_URL.to_string())
+        // 하이라이트 스타일시트는 테마에서 생성한다. HTML은 클래스만 담고 있으므로
+        // 이 파일 하나를 바꾸면 사이트 전체의 코드 색이 바뀐다.
+        let css = highlight::stylesheet(&cfg.highlight)?;
+        assets.insert(HIGHLIGHT_ASSET, css.into_bytes(), cfg.assets.fingerprint);
+        assets.url(HIGHLIGHT_ASSET).map(str::to_string)
     } else {
         None
     };
 
-    let mut out = BuildOutput::default();
+    assets.write_manifest();
+    let templates = Templates::load(root)?.with_assets(assets.manifest.clone());
 
-    // 하이라이트 스타일시트는 테마에서 생성한다. HTML은 클래스만 담고 있으므로
-    // 이 파일 하나를 바꾸면 사이트 전체의 코드 색이 바뀐다.
-    if cfg.highlight.enabled {
-        let css = highlight::stylesheet(&cfg.highlight)?;
-        out.files.insert(
-            HIGHLIGHT_CSS_URL.trim_start_matches('/').to_string(),
-            css.into_bytes(),
-        );
-    }
+    let mut out = BuildOutput::default();
+    out.files.extend(assets.files);
 
     for page in &pages {
         let html = render_page(

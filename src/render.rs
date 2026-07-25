@@ -93,6 +93,30 @@ impl Templates {
         Ok(Self { env, names })
     }
 
+    /// 템플릿에서 `{{ asset("css/main.css") }}`로 해시가 붙은 실제 URL을 얻게 한다.
+    ///
+    /// 없는 에셋은 **에러**다. 조용히 원래 경로를 돌려주면 오타가 404 링크로 배포되고,
+    /// minijinja 에러가 템플릿 이름과 줄 번호를 달고 나오므로 찾기도 쉽다.
+    pub fn with_assets(mut self, manifest: std::collections::BTreeMap<String, String>) -> Self {
+        self.env.add_function("asset", move |path: String| {
+            manifest
+                .get(path.trim_start_matches('/'))
+                .cloned()
+                .ok_or_else(|| {
+                    let mut known: Vec<&str> = manifest.keys().map(|s| s.as_str()).collect();
+                    known.sort_unstable();
+                    minijinja::Error::new(
+                        minijinja::ErrorKind::InvalidOperation,
+                        format!(
+                            "에셋 '{path}'이(가) 없습니다. 사용 가능: {}",
+                            known.join(", ")
+                        ),
+                    )
+                })
+        });
+        self
+    }
+
     pub fn has(&self, name: &str) -> bool {
         self.names.iter().any(|n| n == name)
     }

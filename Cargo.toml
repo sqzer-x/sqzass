@@ -23,6 +23,7 @@ path = "src/main.rs"
 # --- M0 ---
 anyhow    = "1"
 axum = { version = "0.8", features = ["ws"] }
+blake3 = "1"
 clap      = { version = "4.6", features = ["derive"] }
 # ⚠️ comrak의 default = ["cli", "syntect-onig", "bon"] 이다. 그대로 쓰면
 #    (1) comrak 자체 CLI 의존성(clap/shell-words/xdg/fmt2io)이 딸려오고
@@ -35,6 +36,7 @@ minijinja = "2.21"
 notify = "8.2"
 notify-debouncer-full = "0.7"
 serde     = { version = "1", features = ["derive"] }
+serde_json = "1"
 syntect = { version = "5.3", default-features = false, features = ["default-fancy"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "signal"] }
 toml      = "1.1"
