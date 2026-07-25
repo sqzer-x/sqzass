@@ -3,6 +3,7 @@
 pub mod assets;
 pub mod config;
 pub mod content;
+pub mod doctor;
 pub mod error;
 pub mod highlight;
 pub mod i18n;
@@ -154,6 +155,15 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     Ok(out)
 }
 
+/// 사이트를 읽고 지적할 것들을 모은다. 아무것도 쓰지 않는다.
+pub fn diagnose(opts: &BuildOptions) -> Result<Vec<doctor::Finding>> {
+    let cfg = load_config(opts)?;
+    let pages = content::discover(&opts.input, &cfg, opts.drafts || cfg.build.drafts)
+        .map_err(Kind::Content.tag())?;
+    let site = Site::build(&pages, &cfg);
+    doctor::run(&opts.input, &cfg, &pages, &site).map_err(Kind::Other.tag())
+}
+
 /// 사이트를 빌드해 디스크에 쓴다.
 pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
     let cfg = load_config(opts)?;
@@ -283,7 +293,7 @@ fn render_page(
 /// Hugo의 20단계 lookup order 캐스케이드는 채택하지 않는다 — kind × section × type ×
 /// layout × language × output format을 곱해 만든 순서표는 사용자가 가장 많이 헤매는
 /// 지점이고, "해석 순서를 출력이라도 해달라"는 요청이 10년째 열려 있다.
-fn select_template(page: &Page, site: &Site, templates: &Templates) -> Result<String> {
+pub(crate) fn select_template(page: &Page, site: &Site, templates: &Templates) -> Result<String> {
     if let Some(explicit) = &page.front.template {
         if templates.has(explicit) {
             return Ok(explicit.clone());

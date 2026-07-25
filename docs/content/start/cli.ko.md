@@ -9,6 +9,7 @@ toc = true
 sqzass init  [DIR]
 sqzass build [-i DIR] [-o DIR] [--drafts] [--base-url URL]
 sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
+sqzass doctor [-i DIR] [--fail-on note|warn] [--drafts]
 ```
 
 `--json`은 셋 다에 붙습니다.
@@ -36,6 +37,34 @@ sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
 메모리에서 서빙하며 <http://127.0.0.1:3000>에 라이브 리로드를 붙입니다.
 [개발 서버](@/features/dev-server.md)를 참고하세요.
 
+## doctor
+
+```bash
+sqzass doctor -i mysite
+```
+
+`build`는 해석하지 못하는 것을 이미 거부합니다 — 깨진 `@/` 링크, 없는 템플릿, 같은
+URL을 주장하는 두 페이지, 오타 난 설정 키. `doctor`는 **빌드가 받아들이지만 당신이
+의도하지 않았을 수도 있는 것**을 봅니다.
+
+| 검사 | | |
+|---|---|---|
+| `base-url` | warn | `base_url`이 아직 자리표시자 `https://example.com`입니다. |
+| `untranslated` | warn | 어떤 언어에는 있고 어떤 언어에는 없는 페이지입니다. |
+| `empty-section` | warn | 섹션에 페이지가 없어서 내비게이션 항목이 빈 곳으로 갑니다. |
+| `description` | note | `description`이 없는 페이지입니다. |
+| `draft` | note | 빌드에서 빠지는 페이지입니다. |
+| `unused-template` | note | 어떤 페이지도 고르지 않고, 어떤 템플릿도 이름으로 부르지 않습니다. |
+
+`--fail-on`으로 게이트를 정하고, 기본은 `warn`이며, 걸리면 `7`로 끝납니다. 기본을
+`note`로 두지 않은 건 의도적입니다. note는 "알아 두라"는 말이고, 그것 때문에
+파이프라인이 멈추면 사람들은 검사를 고치는 대신 doctor를 꺼 버립니다.
+
+```bash
+sqzass doctor -i mysite --fail-on note    # 엄격하게
+sqzass doctor -i mysite --json            # 모든 지적을 데이터로
+```
+
 ## exit code
 
 빌드는 성공하거나, 사이트의 **어느 부분을** 받아들일 수 없었는지 알려 줍니다. 코드는
@@ -50,6 +79,7 @@ sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
 | `4` | `SQZASS_E_CONTENT` | `content/` 아래 — front matter, 빠진 title, 같은 URL을 주장하는 두 페이지, 해석 안 되는 `@/` 링크. |
 | `5` | `SQZASS_E_TEMPLATE` | `templates/`, `i18n/`, 또는 템플릿이 요청했는데 없는 에셋. |
 | `6` | `SQZASS_E_IO` | 읽기나 쓰기 실패. |
+| `7` | | `doctor`가 `--fail-on` 기준 이상을 찾았습니다. |
 
 식별자는 메시지와 함께 찍히므로 그대로 검색할 수 있습니다.
 

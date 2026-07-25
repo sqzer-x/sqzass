@@ -33,6 +33,26 @@ enum Command {
     Serve(ServeArgs),
     /// 새 사이트를 만든다
     Init(InitArgs),
+    /// 빌드는 통과하지만 알아 둘 만한 것들을 찾는다
+    Doctor(DoctorArgs),
+}
+
+#[derive(clap::Args)]
+struct DoctorArgs {
+    /// 사이트 루트 (sqzass.toml이 있는 디렉터리)
+    #[arg(short, long, default_value = ".", value_name = "DIR")]
+    input: PathBuf,
+
+    /// 이 심각도 이상이 하나라도 있으면 실패로 끝낸다 (note | warn)
+    ///
+    /// 기본이 warn인 이유: note는 "알아 두라"는 말이고, 그것 때문에 파이프라인이
+    /// 멈추면 사람들은 doctor를 끄지 검사를 고치지 않는다.
+    #[arg(long, default_value = "warn", value_name = "SEVERITY")]
+    fail_on: sqzass::doctor::Severity,
+
+    /// 드래프트 페이지도 포함해서 본다
+    #[arg(long)]
+    drafts: bool,
 }
 
 #[derive(clap::Args)]
@@ -152,6 +172,45 @@ fn run(cli: Cli) -> Result<()> {
                     println!("  {}", display_path(&args.dir.join(rel)));
                 }
                 println!("\nsqzass serve -i {}", display_path(&args.dir));
+            }
+            Ok(())
+        }
+        Command::Doctor(args) => {
+            let findings = sqzass::diagnose(&BuildOptions {
+                input: args.input,
+                output: None,
+                drafts: args.drafts,
+                base_url: None,
+            })?;
+            let gated = findings
+                .iter()
+                .filter(|f| f.severity >= args.fail_on)
+                .count();
+
+            if json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "ok": gated == 0,
+                        "findings": findings,
+                        "gated": gated,
+                    })
+                );
+            } else if findings.is_empty() {
+                println!("지적할 것이 없습니다");
+            } else {
+                for f in &findings {
+                    println!("{f}");
+                }
+                println!(
+                    "\n{}건 중 {gated}건이 {} 이상입니다",
+                    findings.len(),
+                    args.fail_on
+                );
+            }
+
+            if gated > 0 {
+                std::process::exit(sqzass::doctor::FINDINGS_EXIT_CODE);
             }
             Ok(())
         }

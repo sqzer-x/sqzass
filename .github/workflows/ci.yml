@@ -34,6 +34,12 @@ jobs:
       - name: Build the docs site
         run: cargo run --quiet -- build -i docs
 
+      # doctor는 빌드가 통과시키는 것들을 본다 — 미번역 페이지, 빈 섹션, 자리표시자
+      # base_url. 지금 문서 사이트는 깨끗하고, 그 상태를 유지하는 게 이 검사의 목적이다.
+      # 동시에 doctor 자체가 실제 사이트에서 도는지 확인하는 자리이기도 하다.
+      - name: Doctor
+        run: cargo run --quiet -- doctor -i docs
+
       # 같은 입력이면 같은 바이트가 나와야 한다. 두 페이지가 같은 출력 URL을
       # 주장할 때 파일 순회 순서에 따라 결과가 달라지는 종류의 버그를 잡는다.
       - name: Build is reproducible

@@ -9,6 +9,7 @@ toc = true
 sqzass init  [DIR]
 sqzass build [-i DIR] [-o DIR] [--drafts] [--base-url URL]
 sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
+sqzass doctor [-i DIR] [--fail-on note|warn] [--drafts]
 ```
 
 `--json` works on any of them.
@@ -36,6 +37,34 @@ a ghost in the built site.
 Serves from memory with live reload on <http://127.0.0.1:3000>. See
 [Development server](@/features/dev-server.md).
 
+## doctor
+
+```bash
+sqzass doctor -i mysite
+```
+
+`build` already refuses anything it cannot resolve — a broken `@/` link, a
+missing template, two pages claiming one URL, a misspelled configuration key.
+`doctor` is for what the build accepts and you might not have meant.
+
+| Check | | |
+|---|---|---|
+| `base-url` | warn | `base_url` is still the placeholder `https://example.com`. |
+| `untranslated` | warn | A page exists in some languages and not others. |
+| `empty-section` | warn | A section has no pages, so its navigation entry leads nowhere. |
+| `description` | note | A page has no `description`. |
+| `draft` | note | A page is excluded from the build. |
+| `unused-template` | note | No page selects this template, and no template names it. |
+
+`--fail-on` sets the gate, `warn` by default, and a gated run exits `7`. The
+default is not `note` on purpose: notes are things to know, and a pipeline that
+stops for them gets switched off rather than fixed.
+
+```bash
+sqzass doctor -i mysite --fail-on note    # strict
+sqzass doctor -i mysite --json            # every finding as data
+```
+
 ## Exit codes
 
 A build either succeeds or tells you which part of your site it could not
@@ -51,6 +80,7 @@ without parsing text.
 | `4` | `SQZASS_E_CONTENT` | Something under `content/` — front matter, a missing title, two pages claiming one URL, an unresolved `@/` link. |
 | `5` | `SQZASS_E_TEMPLATE` | `templates/`, `i18n/`, or an asset a template asked for and did not get. |
 | `6` | `SQZASS_E_IO` | Reading or writing failed. |
+| `7` | | `doctor` found something at or above the `--fail-on` gate. |
 
 The identifier is printed with the message, so it can be searched for:
 
