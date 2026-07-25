@@ -10,20 +10,9 @@ use std::path::Path;
 pub const CONFIG_FILE: &str = "sqzass.toml";
 
 /// `sqzass.toml`이 가질 수 있는 최상위 키. 오타 감지에 쓴다.
-const KNOWN_TOP_LEVEL: &[&str] = &[
-    "title",
-    "description",
-    "base_url",
-    "default_language",
-    "languages",
-    "build",
-    "markdown",
-    "highlight",
-    "assets",
-    "nav",
-];
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     pub title: String,
     #[serde(default)]
@@ -47,6 +36,7 @@ pub struct Config {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Language {
     pub name: String,
     #[serde(default)]
@@ -54,7 +44,7 @@ pub struct Language {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Build {
     pub output_dir: String,
     pub drafts: bool,
@@ -70,7 +60,7 @@ impl Default for Build {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Markdown {
     pub footnotes: bool,
     pub tables: bool,
@@ -109,7 +99,7 @@ pub enum HeadingAnchors {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Highlight {
     pub enabled: bool,
     pub theme_light: String,
@@ -127,7 +117,7 @@ impl Default for Highlight {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Assets {
     pub source_dir: String,
     pub fingerprint: bool,
@@ -143,7 +133,7 @@ impl Default for Assets {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Nav {
     /// `weight` | `title`
     pub sort_by: SortBy,
@@ -171,15 +161,16 @@ fn default_language() -> String {
 impl Config {
     /// 사이트 루트에서 `sqzass.toml`을 읽는다.
     ///
-    /// 알 수 없는 최상위 키는 **경고**하고 계속 진행한다 — 오타 하나로 빌드를 막는 것보다
-    /// "이 키는 읽히지 않는다"고 알려주는 쪽이 낫다. 설정 오타는 모든 SSG의 1순위
-    /// 지원 부담이고, 고치는 비용이 거의 0이다.
+    /// 모르는 키는 **에러**다. 조용히 무시되는 설정은 "깨진 참조는 빌드를 멈춘다"는
+    /// 원칙의 정확한 위반이다 — `theme_ligth`라고 쓴 사람은 테마를 바꾼 줄 알고 있고,
+    /// 바뀌지 않은 이유를 찾느라 시간을 쓴다.
+    ///
+    /// 후보 목록과 줄 번호는 serde와 toml이 만들어 준다. 유효한 키 목록을 손으로
+    /// 관리하면 필드를 추가할 때마다 같이 고쳐야 하고, 언젠가 잊는다.
     pub fn load(root: &Path) -> Result<Self> {
         let path = root.join(CONFIG_FILE);
         let raw = std::fs::read_to_string(&path)
             .with_context(|| format!("{}을(를) 읽을 수 없습니다", path.display()))?;
-
-        warn_unknown_keys(&raw, &path);
 
         let cfg: Config =
             toml::from_str(&raw).with_context(|| format!("{} 파싱 실패", path.display()))?;
@@ -204,71 +195,42 @@ impl Config {
     }
 }
 
-fn warn_unknown_keys(raw: &str, path: &Path) {
-    let Ok(table) = raw.parse::<toml::Table>() else {
-        return; // 진짜 파싱 에러는 아래에서 제대로 보고된다
-    };
-    for key in table.keys() {
-        if KNOWN_TOP_LEVEL.contains(&key.as_str()) {
-            continue;
-        }
-        let hint = closest(key, KNOWN_TOP_LEVEL)
-            .map(|s| format!(" '{s}'을(를) 의도하셨나요?"))
-            .unwrap_or_default();
-        eprintln!(
-            "warning: {}의 '{}' 키는 sqzass가 읽지 않습니다.{}",
-            path.display(),
-            key,
-            hint
-        );
-    }
-}
-
-/// 편집 거리가 충분히 가까운 후보를 고른다.
-fn closest<'a>(needle: &str, haystack: &[&'a str]) -> Option<&'a str> {
-    let max = (needle.len() / 3).max(1);
-    haystack
-        .iter()
-        .map(|c| (*c, levenshtein(needle, c)))
-        .filter(|(_, d)| *d <= max)
-        .min_by_key(|(_, d)| *d)
-        .map(|(c, _)| c)
-}
-
-fn levenshtein(a: &str, b: &str) -> usize {
-    let b: Vec<char> = b.chars().collect();
-    let mut prev: Vec<usize> = (0..=b.len()).collect();
-    let mut cur = vec![0usize; b.len() + 1];
-
-    for (i, ca) in a.chars().enumerate() {
-        cur[0] = i + 1;
-        for (j, cb) in b.iter().enumerate() {
-            let cost = usize::from(ca != *cb);
-            cur[j + 1] = (prev[j + 1] + 1).min(cur[j] + 1).min(prev[j] + cost);
-        }
-        std::mem::swap(&mut prev, &mut cur);
-    }
-    prev[b.len()]
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    /// 조용히 무시되는 설정은 "깨진 참조는 빌드를 멈춘다"의 정확한 위반이다.
     #[test]
-    fn levenshtein_basics() {
-        assert_eq!(levenshtein("", ""), 0);
-        assert_eq!(levenshtein("markdown", "markdown"), 0);
-        assert_eq!(levenshtein("markdonw", "markdown"), 2);
-        assert_eq!(levenshtein("title", "titel"), 2);
+    fn unknown_keys_are_an_error() {
+        let err = toml::from_str::<Config>(
+            r#"
+            title = "t"
+            base_url = "https://example.com"
+            [highlight]
+            theme_ligth = "InspiredGitHub"
+            "#,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("theme_ligth"), "실제: {err}");
+        // 후보 목록은 serde가 만들어 준다. 손으로 관리하는 목록은 언젠가 어긋난다.
+        assert!(err.contains("theme_light"), "실제: {err}");
     }
 
     #[test]
-    fn suggests_close_key() {
-        assert_eq!(closest("markdonw", KNOWN_TOP_LEVEL), Some("markdown"));
-        assert_eq!(closest("titl", KNOWN_TOP_LEVEL), Some("title"));
-        // 전혀 다른 키에는 엉뚱한 제안을 하지 않는다
-        assert_eq!(closest("completely_unrelated", KNOWN_TOP_LEVEL), None);
+    fn unknown_top_level_keys_are_an_error() {
+        let err = toml::from_str::<Config>(
+            r#"
+            title = "t"
+            base_url = "https://example.com"
+            [markdwon]
+            tables = false
+            "#,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("markdwon"), "실제: {err}");
+        assert!(err.contains("markdown"), "실제: {err}");
     }
 
     #[test]

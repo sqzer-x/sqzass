@@ -13,7 +13,7 @@ pub const CONTENT_DIR: &str = "content";
 const FENCE: &str = "+++";
 
 #[derive(Debug, Clone, Default, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct FrontMatter {
     /// 유일한 필수 필드. 없으면 좋은 에러를 내기 위해 Option으로 받는다.
     pub title: Option<String>,
@@ -95,7 +95,10 @@ fn parse_page(path: &Path, content_root: &Path, cfg: &Config) -> Result<Page> {
 
     let (fm_text, body, body_line_offset) = split_front_matter(&raw, path)?;
 
-    let front: FrontMatter = toml::from_str(&fm_text)
+    // 빈 줄 하나를 앞에 붙여 toml이 세는 줄 번호를 원본 파일의 줄 번호에 맞춘다.
+    // 여는 `+++`가 항상 1번 줄이므로 front matter 본문은 2번 줄부터 시작한다.
+    // 이 한 줄이 없으면 에러가 가리키는 줄이 항상 하나씩 위를 가리킨다.
+    let front: FrontMatter = toml::from_str(&format!("\n{fm_text}"))
         .with_context(|| format!("{}: front matter 파싱 실패", path.display()))?;
 
     let title = front.title.clone().ok_or_else(|| {
@@ -320,6 +323,31 @@ mod tests {
             "#,
         )
         .unwrap()
+    }
+
+    /// front matter 오타도 조용히 무시하지 않는다. 그리고 에러가 가리키는 줄은
+    /// **원본 파일의** 줄이어야 한다 — 펜스를 손으로 자른 이유가 그것이다.
+    #[test]
+    fn unknown_front_matter_key_errors_at_the_real_line() {
+        let dir = std::env::temp_dir().join(format!("sqzass-fm-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("content")).unwrap();
+        let path = dir.join("content/_index.md");
+        std::fs::write(&path, "+++\ntitle = \"x\"\nweigth = 10\n+++\n\nbody\n").unwrap();
+
+        let cfg: Config =
+            toml::from_str("title = \"t\"\nbase_url = \"https://example.com\"\n").unwrap();
+        // anyhow는 `{}`에 최상위 컨텍스트만 낸다. 원인 사슬은 `{:#}`이라야 보인다.
+        let err = format!(
+            "{:#}",
+            parse_page(&path, &dir.join("content"), &cfg).unwrap_err()
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+
+        assert!(err.contains("weigth"), "실제: {err}");
+        assert!(err.contains("weight"), "후보를 제시해야 한다: {err}");
+        // `weigth`는 파일의 3번 줄이다. 펜스를 세지 않으면 2번 줄이라고 말한다.
+        assert!(err.contains("line 3"), "원본 파일 줄 번호가 아니다: {err}");
     }
 
     #[test]

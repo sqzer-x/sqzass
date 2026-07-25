@@ -28,7 +28,6 @@ heading_anchors       = "right"
 [highlight]
 theme_light  = "InspiredGitHub"
 theme_dark   = "base16-ocean.dark"
-line_numbers = false
 
 [assets]
 source_dir  = "static"

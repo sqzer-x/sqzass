@@ -61,12 +61,23 @@ impl BuildOutput {
 
 /// 사이트를 빌드해 메모리에 담는다. 디스크는 건드리지 않는다.
 pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
-    let root = &opts.input;
-    let mut cfg = Config::load(root)?;
+    render_site(opts, load_config(opts)?)
+}
+
+/// 설정을 읽고 명령줄 덮어쓰기를 적용한다.
+///
+/// 빌드 경로가 이걸 두 번 부르지 않도록 따로 뺐다. 두 번 부르면 설정 진단이 두 번
+/// 찍히고, 사용자는 자기 파일에 문제가 두 개 있다고 읽는다.
+fn load_config(opts: &BuildOptions) -> Result<Config> {
+    let mut cfg = Config::load(&opts.input)?;
     if let Some(base) = &opts.base_url {
         cfg.base_url = base.clone();
     }
+    Ok(cfg)
+}
 
+fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
+    let root = &opts.input;
     let drafts = opts.drafts || cfg.build.drafts;
 
     let pages = content::discover(root, &cfg, drafts)?;
@@ -138,9 +149,9 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
 
 /// 사이트를 빌드해 디스크에 쓴다.
 pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
-    let cfg = Config::load(&opts.input)?;
+    let cfg = load_config(opts)?;
     let out_dir = resolve_output_dir(opts, &cfg);
-    let output = build_to_memory(opts)?;
+    let output = render_site(opts, cfg)?;
 
     // 출력 디렉터리를 매번 새로 만든다. 지운 페이지가 유령으로 남는 걸 막는다.
     if out_dir.exists() {
