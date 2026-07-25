@@ -4,6 +4,7 @@ pub mod assets;
 pub mod config;
 pub mod content;
 pub mod highlight;
+pub mod i18n;
 pub mod init;
 pub mod links;
 pub mod markdown;
@@ -100,7 +101,9 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     };
 
     assets.write_manifest();
-    let templates = Templates::load(root)?.with_assets(assets.manifest.clone());
+    let templates = Templates::load(root)?
+        .with_assets(assets.manifest.clone())
+        .with_i18n(i18n::load(root)?);
 
     let mut out = BuildOutput::default();
     out.files.extend(assets.files);

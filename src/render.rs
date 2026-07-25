@@ -117,6 +117,25 @@ impl Templates {
         self
     }
 
+    /// 템플릿에서 `{{ t("skip_to_content") }}`로 UI 문자열을 얻게 한다.
+    ///
+    /// 언어는 인자로 받지 않고 렌더 중인 컨텍스트의 `page.language`에서 읽는다.
+    /// 호출하는 쪽이 매번 언어를 넘겨야 하면 언젠가 한 군데를 빠뜨리고, 그 페이지만
+    /// 다른 언어로 나간다.
+    pub fn with_i18n(mut self, catalog: crate::i18n::Catalog) -> Self {
+        self.env.add_function("t", move |state: &State, key: &str| {
+            let language = state
+                .lookup("page")
+                .and_then(|p| p.get_attr("language").ok())
+                .map(|v| v.to_string())
+                .unwrap_or_default();
+
+            crate::i18n::lookup(&catalog, &language, key)
+                .map_err(|msg| minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, msg))
+        });
+        self
+    }
+
     pub fn has(&self, name: &str) -> bool {
         self.names.iter().any(|n| n == name)
     }

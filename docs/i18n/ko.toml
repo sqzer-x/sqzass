@@ -1,0 +1,16 @@
+# UI 문자열. 어느 한 언어에 키가 없으면 빌드 에러다 — 기본 언어로 떨어뜨리면
+# 한국어 페이지에 영어 라벨이 섞여 나간다.
+
+skip_to_content = "본문으로 건너뛰기"
+sections        = "문서 갈래"
+documentation   = "문서"
+breadcrumb      = "현재 위치"
+home            = "홈"
+on_this_page    = "이 페이지"
+search          = "검색"
+search_the_docs = "문서 검색"
+theme           = "테마"
+built_with      = "sqzass로 빌드됨"
+pagination      = "이어 보기"
+previous        = "이전"
+next            = "다음"

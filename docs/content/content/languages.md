@@ -74,6 +74,46 @@ translation_key = "install"
 +++
 ```
 
+## UI strings
+
+Page text lives in `content/`. The words the *template* supplies — "Skip to
+content", "On this page", "Previous" — live in `i18n/<code>.toml`.
+
+```toml
+# i18n/en.toml
+home         = "Home"
+on_this_page = "On this page"
+```
+
+```toml
+# i18n/ko.toml
+home         = "홈"
+on_this_page = "이 페이지"
+```
+
+```html
+<a href="{{ home }}">{{ t("home") }}</a>
+```
+
+`t` reads the language from the page being rendered, so a template never asks
+which language it is in. It never has to be told, and there is no line where
+someone can forget to tell it.
+
+**A key missing from one language is an error**, and the message says which
+languages do have it:
+
+```
+번역 키 'next' 가 i18n/ko.toml 에 없습니다 (en 에는 있습니다) (in page.html:22)
+```
+
+Falling back to the default language would put English labels inside a Korean
+page — visible to every Korean reader and invisible to whoever is maintaining
+the site, which is the same reason untranslated pages are hidden rather than
+duplicated.
+
+Sites with no `i18n/` directory work fine. `t` is only needed by templates that
+call it.
+
 ## Korean specifics
 
 Two things are handled for you and are worth knowing about, because both are

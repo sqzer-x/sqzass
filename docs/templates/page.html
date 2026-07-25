@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{%- set ko = page.language == "ko" %}
 
 {% block content %}
 <div class="prose">
@@ -11,16 +10,16 @@
     across the boundary into an unrelated one pretends the sections are a single
     ordered book. #}
 {%- if page.prev or page.next %}
-<nav class="pager" aria-label="{{ "이어 보기" if ko else "Pagination" }}">
+<nav class="pager" aria-label="{{ t("pagination") }}">
   {%- if page.prev %}
   <a class="pager-prev" href="{{ page.prev.url }}" rel="prev">
-    <span>{{ "이전" if ko else "Previous" }}</span>
+    <span>{{ t("previous") }}</span>
     <strong>{{ page.prev.title }}</strong>
   </a>
   {%- endif %}
   {%- if page.next %}
   <a class="pager-next" href="{{ page.next.url }}" rel="next">
-    <span>{{ "다음" if ko else "Next" }}</span>
+    <span>{{ t("next") }}</span>
     <strong>{{ page.next.title }}</strong>
   </a>
   {%- endif %}

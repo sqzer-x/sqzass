@@ -1,0 +1,16 @@
+# UI strings. A key missing from any one language is a build error — falling
+# back would mean shipping English labels inside a Korean page.
+
+skip_to_content = "Skip to content"
+sections        = "Sections"
+documentation   = "Documentation"
+breadcrumb      = "Breadcrumb"
+home            = "Home"
+on_this_page    = "On this page"
+search          = "Search"
+search_the_docs = "Search the documentation"
+theme           = "Theme"
+built_with      = "Built with sqzass"
+pagination      = "Pagination"
+previous        = "Previous"
+next            = "Next"

@@ -14,8 +14,10 @@
 <title>{% if page.url == home %}{{ site.title }} — {{ site.description }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
 {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
 <link rel="canonical" href="{{ page.permalink }}">
-{%- for t in page.translations %}
-<link rel="alternate" hreflang="{{ t.code }}" href="{{ site.base_url }}{{ t.url }}">
+{#- `lang`이지 `t`가 아니다. `t`는 번역 함수이고, 루프 변수가 그 이름을 가리면
+    이 블록 안에서 라벨을 하나 넣는 순간 조용히 깨진다. #}
+{%- for lang in page.translations %}
+<link rel="alternate" hreflang="{{ lang.code }}" href="{{ site.base_url }}{{ lang.url }}">
 {%- endfor %}
 <link rel="stylesheet" href="{{ asset("css/main.css") }}">
 {%- if site.highlight_css %}
@@ -29,7 +31,7 @@
 </script>
 </head>
 <body>
-<a class="skip" href="#content">{{ "본문으로 건너뛰기" if ko else "Skip to content" }}</a>
+<a class="skip" href="#content">{{ t("skip_to_content") }}</a>
 
 <header class="masthead">
   <a class="brand" href="{{ home }}">{{ site.title }}</a>
@@ -37,7 +39,7 @@
   {#- The top nav is the section list. It is the same data the sidebar draws,
       one level up, so a reader can move between parts of the documentation
       without going back to the index. #}
-  <nav class="sections" aria-label="{{ "문서 갈래" if ko else "Sections" }}">
+  <nav class="sections" aria-label="{{ t("sections") }}">
     {%- for s in site.sections %}
     <a href="{{ s.url }}"{% if page.section and page.section.url == s.url or page.url == s.url %} aria-current="true"{% endif %}>{{ s.title }}</a>
     {%- endfor %}
@@ -48,28 +50,28 @@
             data-index="/search-{{ page.language }}.json">
       {#- The label is replaced with the reader's own modifier by search.js;
           this is the value someone with JavaScript off sees. #}
-      <span>{{ "검색" if ko else "Search" }}</span><kbd>Ctrl /</kbd>
+      <span>{{ t("search") }}</span><kbd>Ctrl /</kbd>
     </button>
-    {%- for t in page.translations %}
-    <a href="{{ t.url }}" hreflang="{{ t.code }}">{{ t.name }}</a>
+    {%- for lang in page.translations %}
+    <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
     {%- endfor %}
     <a href="https://github.com/sqzer-x/sqzass">GitHub</a>
     {#- Text, not a glyph: ◐/☾ and friends are missing from enough fallback
         stacks that they render as a box. #}
-    <button class="theme-toggle" type="button">{{ "테마" if ko else "Theme" }}</button>
+    <button class="theme-toggle" type="button">{{ t("theme") }}</button>
   </div>
 </header>
 
 <div class="layout">
-  <aside class="sidebar" aria-label="{{ "문서" if ko else "Documentation" }}">
+  <aside class="sidebar" aria-label="{{ t("documentation") }}">
     {{ nav(site.sections, page.url) }}
   </aside>
 
   <main id="content">
     <div class="title-block">
       {%- if page.section %}
-      <nav class="crumbs" aria-label="{{ "현재 위치" if ko else "Breadcrumb" }}">
-        <a href="{{ home }}">{{ "홈" if ko else "Home" }}</a>
+      <nav class="crumbs" aria-label="{{ t("breadcrumb") }}">
+        <a href="{{ home }}">{{ t("home") }}</a>
         <a href="{{ page.section.url }}">{{ page.section.title }}</a>
       </nav>
       {%- endif %}
@@ -87,21 +89,21 @@
   </main>
 
   {%- if page.toc and page.toc_entries %}
-  <aside class="toc" data-label="{{ "이 페이지" if ko else "On this page" }}" aria-label="{{ "이 페이지" if ko else "On this page" }}">
+  <aside class="toc" data-label="{{ t("on_this_page") }}" aria-label="{{ t("on_this_page") }}">
     {{ toc_list(page.toc_entries) }}
   </aside>
   {%- endif %}
 </div>
 
 <footer class="colophon">
-  <span>{{ "sqzass로 빌드됨" if ko else "Built with sqzass" }}</span>
+  <span>{{ t("built_with") }}</span>
   <a href="https://github.com/sqzer-x/sqzass">Source</a>
   <span>MIT</span>
 </footer>
 
-<dialog id="search-dialog" class="search-dialog" aria-label="{{ "문서 검색" if ko else "Search the documentation" }}">
+<dialog id="search-dialog" class="search-dialog" aria-label="{{ t("search_the_docs") }}">
   <div class="search-panel">
-    <input type="search" autocomplete="off" spellcheck="false" aria-label="{{ "문서 검색" if ko else "Search the documentation" }}">
+    <input type="search" autocomplete="off" spellcheck="false" aria-label="{{ t("search_the_docs") }}">
     <ul class="search-results"></ul>
     <div class="search-foot">
       <span class="search-status"></span>
