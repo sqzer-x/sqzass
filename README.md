@@ -6,35 +6,25 @@ Most generators lean on their host for pretty URLs, redirects and cache headers.
 sqzass does that work itself, so the same output is correct on GitHub Pages,
 Vercel, Cloudflare Pages, or a plain directory served over HTTP.
 
-> **Status: early.** The build pipeline works end to end. Syntax highlighting,
-> table of contents, the asset pipeline, search and the dev server are not built
-> yet. Not usable for a real site.
+> **Status: early, and honest about it.** The pipeline works end to end —
+> markdown, sections, templates, syntax highlighting, table of contents, the
+> asset pipeline, search, a dev server with live reload, sitemap and robots.txt.
+> The documentation site at <https://sqzass.sqzer.com> is built with it, from
+> `docs/` in this repository, and CI builds that site with the binary it just
+> compiled. There are no prebuilt binaries yet, and no theme system.
 
-## Design
-
-- **Markdown on the AST, not on the output.** Link rewriting, heading anchors and
-  the table of contents are tree operations via [comrak]. Running regexes over the
-  final HTML — the common shortcut — silently skips any element whose attributes
-  are single-quoted or unquoted.
-- **Templates resolved from a snapshot.** `templates/` is read into memory once per
-  build and [minijinja]'s loader serves `include`/`extends` from that snapshot, so a
-  rebuild triggered mid-save can never ingest a half-written partial.
-- **Autoescaped by default.** `| safe` is opt-in, and undefined variable access is
-  an error rather than an empty string.
-- **Reproducible.** Two builds of the same input are byte-identical. Two pages
-  claiming the same URL is a hard error, not a race.
-- **Bilingual from the start.** `page.md` and `page.ko.md` sit side by side; the
-  default language lives at the root and others under `/<code>/`.
-- **One binary, no runtime.** No Node, no Python, no system libraries.
-
-## Usage
+## Quick start
 
 ```bash
-sqzass build -i <site-dir>
+sqzass init mysite
+sqzass serve -i mysite
 ```
 
-A site is a directory containing `sqzass.toml`, `content/` and `templates/`.
-Front matter is TOML, fenced with `+++`:
+`init` writes three files — `sqzass.toml`, `content/_index.md` and
+`templates/page.html` — and `serve` puts them on <http://127.0.0.1:3000> with
+live reload. `sqzass build -i mysite` writes the site to `mysite/public`.
+
+Front matter is TOML, fenced with `+++`. `title` is the only required field.
 
 ```markdown
 +++
@@ -45,7 +35,31 @@ weight = 10
 Body goes here.
 ```
 
-Output goes to `public/` as `path/index.html`, plus a `.nojekyll` marker.
+## Design
+
+- **Markdown on the AST, not on the output.** Link rewriting, heading anchors and
+  the table of contents are tree operations via [comrak]. Running regexes over the
+  final HTML — the common shortcut — silently skips any element whose attributes
+  are single-quoted or unquoted.
+- **Broken references stop the build.** An unresolved `@/` link, a missing
+  template, two pages claiming the same URL, an unknown asset name, a misspelled
+  configuration key — each is an error, not a warning you scroll past.
+- **Templates resolved from a snapshot.** `templates/` is read into memory once per
+  build and [minijinja]'s loader serves `include`/`extends` from that snapshot, so a
+  rebuild triggered mid-save can never ingest a half-written partial.
+- **Autoescaped by default.** `| safe` is opt-in, and undefined variable access is
+  an error rather than an empty string.
+- **Highlighting emits classes, never inline styles.** Inline colours pin one
+  theme into every document forever: dark mode becomes impossible without
+  rebuilding, and a strict `style-src` is off the table.
+- **Reproducible.** Two builds of the same input are byte-identical, and CI
+  checks it on every push.
+- **Korean was not bolted on afterwards.** `page.md` and `page.ko.md` sit side by
+  side, `@/` links resolve to the reader's language, and untranslated pages are
+  absent from that language's navigation rather than duplicated or 404ing.
+  Search matches substrings rather than words, which is the only way `최적화`
+  inside `검색엔진최적화` is ever found.
+- **One binary, no runtime.** No Node, no Python, no system libraries.
 
 ## Building
 
