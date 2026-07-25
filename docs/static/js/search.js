@@ -174,11 +174,11 @@
 
   trigger.addEventListener("click", open);
 
-  /* Ctrl/⌘+S. This takes the shortcut away from the browser's Save Page,
-     deliberately: on a documentation site nobody is saving the HTML, and the
-     key is the one people already reach for. */
+  /* Ctrl/⌘+/. Matched on e.key rather than e.code, because on the layouts
+     where the slash needs a modifier of its own the physical key is somewhere
+     else entirely — what the reader typed is what matters, not where. */
   document.addEventListener("keydown", function (e) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+    if ((e.metaKey || e.ctrlKey) && e.key === "/") {
       e.preventDefault();
       dialog.open ? dialog.close() : open();
     }
@@ -205,5 +205,5 @@
   /* The shortcut hint is written here, not in the template, because it is a
      property of the reader's keyboard rather than of the page. */
   var mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-  trigger.querySelector("kbd").textContent = mac ? "⌘S" : "Ctrl S";
+  trigger.querySelector("kbd").textContent = mac ? "⌘/" : "Ctrl /";
 })();

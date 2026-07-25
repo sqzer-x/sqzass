@@ -48,7 +48,7 @@
             data-index="/search-{{ page.language }}.json">
       {#- The label is replaced with the reader's own modifier by search.js;
           this is the value someone with JavaScript off sees. #}
-      <span>{{ "검색" if ko else "Search" }}</span><kbd>Ctrl S</kbd>
+      <span>{{ "검색" if ko else "Search" }}</span><kbd>Ctrl /</kbd>
     </button>
     {%- for t in page.translations %}
     <a href="{{ t.url }}" hreflang="{{ t.code }}">{{ t.name }}</a>
