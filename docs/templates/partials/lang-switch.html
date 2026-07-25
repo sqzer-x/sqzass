@@ -1,9 +1,0 @@
-{# page.translations는 번역이 실제로 있는 언어만 담는다. 비어 있으면 아무것도 그리지
-   않는다 — 없는 번역으로 보내는 링크를 만들지 않기 위해서다. #}
-{%- if page.translations %}
-<nav aria-label="Language">
-  {%- for t in page.translations %}
-  <a href="{{ t.url }}" lang="{{ t.code }}" hreflang="{{ t.code }}">{{ t.name }}</a>
-  {%- endfor %}
-</nav>
-{%- endif %}
