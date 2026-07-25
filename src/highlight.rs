@@ -234,8 +234,10 @@ mod tests {
 
     #[test]
     fn stylesheet_reports_unknown_theme_names() {
-        let mut cfg = HighlightConfig::default();
-        cfg.theme_dark = "NoSuchTheme".into();
+        let cfg = HighlightConfig {
+            theme_dark: "NoSuchTheme".into(),
+            ..HighlightConfig::default()
+        };
         let err = stylesheet(&cfg).unwrap_err().to_string();
         assert!(err.contains("NoSuchTheme"), "실제: {err}");
     }

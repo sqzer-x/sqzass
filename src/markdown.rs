@@ -334,8 +334,10 @@ mod tests {
 
     #[test]
     fn anchors_can_be_disabled_but_ids_remain() {
-        let mut cfg = MarkdownConfig::default();
-        cfg.heading_anchors = HeadingAnchors::None;
+        let cfg = MarkdownConfig {
+            heading_anchors: HeadingAnchors::None,
+            ..MarkdownConfig::default()
+        };
         let r = Renderer::new(&cfg).render("## Title");
         assert!(r.html.contains(r#"<h2 id="title">"#), "실제: {}", r.html);
         assert!(
