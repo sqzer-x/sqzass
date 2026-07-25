@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+use sqzass::error::{Kind, kind_of, message};
 use sqzass::serve::{ServeOptions, serve};
 use sqzass::{BuildOptions, build, display_path};
 
@@ -15,6 +16,13 @@ use sqzass::{BuildOptions, build, display_path};
 struct Cli {
     #[command(subcommand)]
     command: Command,
+
+    /// 결과를 JSON 한 줄로 낸다 (스크립트·CI용)
+    ///
+    /// 서브커맨드 앞뒤 어디에 써도 되도록 global로 둔다. 사람이 기억해야 하는
+    /// 플래그 위치가 하나 줄어든다.
+    #[arg(long, global = true)]
+    json: bool,
 }
 
 #[derive(Subcommand)]
@@ -78,14 +86,30 @@ struct BuildArgs {
 }
 
 fn main() {
-    if let Err(err) = run() {
-        eprintln!("error: {err:#}");
-        std::process::exit(1);
+    let cli = Cli::parse();
+    let json = cli.json;
+    if let Err(err) = run(cli) {
+        let kind = kind_of(&err);
+        if json {
+            // 실패도 stdout으로 낸다. --json을 켠 쪽은 파이프 하나만 읽는다.
+            println!(
+                "{}",
+                serde_json::json!({
+                    "ok": false,
+                    "error": message(&err),
+                    "kind": kind.id(),
+                    "code": kind.code(),
+                })
+            );
+        } else {
+            eprintln!("error: {}", message(&err));
+        }
+        std::process::exit(kind.code());
     }
 }
 
-fn run() -> Result<()> {
-    let cli = Cli::parse();
+fn run(cli: Cli) -> Result<()> {
+    let json = cli.json;
     match cli.command {
         Command::Build(args) => {
             let stats = build(&BuildOptions {
@@ -94,19 +118,41 @@ fn run() -> Result<()> {
                 drafts: args.drafts,
                 base_url: args.base_url,
             })?;
-            println!(
-                "{} pages → {}",
-                stats.pages_written,
-                display_path(&stats.output_dir)
-            );
+            if json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "ok": true,
+                        "pages": stats.pages_written,
+                        "output": display_path(&stats.output_dir),
+                    })
+                );
+            } else {
+                println!(
+                    "{} pages → {}",
+                    stats.pages_written,
+                    display_path(&stats.output_dir)
+                );
+            }
             Ok(())
         }
         Command::Init(args) => {
-            let written = sqzass::init::init(&args.dir)?;
-            for rel in &written {
-                println!("  {}", display_path(&args.dir.join(rel)));
+            let written = sqzass::init::init(&args.dir).map_err(Kind::Io.tag())?;
+            if json {
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "ok": true,
+                        "dir": display_path(&args.dir),
+                        "files": written,
+                    })
+                );
+            } else {
+                for rel in &written {
+                    println!("  {}", display_path(&args.dir.join(rel)));
+                }
+                println!("\nsqzass serve -i {}", display_path(&args.dir));
             }
-            println!("\nsqzass serve -i {}", display_path(&args.dir));
             Ok(())
         }
         Command::Serve(args) => {

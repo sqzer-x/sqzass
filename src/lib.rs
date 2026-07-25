@@ -3,6 +3,7 @@
 pub mod assets;
 pub mod config;
 pub mod content;
+pub mod error;
 pub mod highlight;
 pub mod i18n;
 pub mod init;
@@ -18,6 +19,8 @@ use anyhow::{Context, Result};
 use minijinja::context;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+
+use error::Kind;
 
 use config::Config;
 use content::Page;
@@ -70,7 +73,7 @@ pub fn build_to_memory(opts: &BuildOptions) -> Result<BuildOutput> {
 /// 빌드 경로가 이걸 두 번 부르지 않도록 따로 뺐다. 두 번 부르면 설정 진단이 두 번
 /// 찍히고, 사용자는 자기 파일에 문제가 두 개 있다고 읽는다.
 fn load_config(opts: &BuildOptions) -> Result<Config> {
-    let mut cfg = Config::load(&opts.input)?;
+    let mut cfg = Config::load(&opts.input).map_err(Kind::Config.tag())?;
     if let Some(base) = &opts.base_url {
         cfg.base_url = base.clone();
     }
@@ -81,11 +84,11 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     let root = &opts.input;
     let drafts = opts.drafts || cfg.build.drafts;
 
-    let pages = content::discover(root, &cfg, drafts)?;
+    let pages = content::discover(root, &cfg, drafts).map_err(Kind::Content.tag())?;
     let site = Site::build(&pages, &cfg);
 
     // 에셋을 먼저 처리해야 템플릿이 해시가 붙은 최종 URL을 조회할 수 있다.
-    let mut assets = assets::Assets::collect(root, &cfg.assets)?;
+    let mut assets = assets::Assets::collect(root, &cfg.assets).map_err(Kind::Io.tag())?;
 
     let mut md =
         markdown::Renderer::new(&cfg.markdown).with_links(site.link_index(), &cfg.default_language);
@@ -93,7 +96,7 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
         md = md.with_highlighter(highlight::Highlighter::new());
         // 하이라이트 스타일시트는 테마에서 생성한다. HTML은 클래스만 담고 있으므로
         // 이 파일 하나를 바꾸면 사이트 전체의 코드 색이 바뀐다.
-        let css = highlight::stylesheet(&cfg.highlight)?;
+        let css = highlight::stylesheet(&cfg.highlight).map_err(Kind::Config.tag())?;
         assets.insert(HIGHLIGHT_ASSET, css.into_bytes(), cfg.assets.fingerprint);
         assets.url(HIGHLIGHT_ASSET).map(str::to_string)
     } else {
@@ -101,9 +104,10 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     };
 
     assets.write_manifest();
-    let templates = Templates::load(root)?
+    let templates = Templates::load(root)
+        .map_err(Kind::Template.tag())?
         .with_assets(assets.manifest.clone())
-        .with_i18n(i18n::load(root)?);
+        .with_i18n(i18n::load(root).map_err(Kind::Template.tag())?);
 
     let mut out = BuildOutput::default();
     out.files.extend(assets.files);
@@ -159,7 +163,8 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
     // 출력 디렉터리를 매번 새로 만든다. 지운 페이지가 유령으로 남는 걸 막는다.
     if out_dir.exists() {
         std::fs::remove_dir_all(&out_dir)
-            .with_context(|| format!("{}을(를) 비울 수 없습니다", out_dir.display()))?;
+            .with_context(|| format!("{}을(를) 비울 수 없습니다", out_dir.display()))
+            .map_err(Kind::Io.tag())?;
     }
 
     for (rel, bytes) in &output.files {
@@ -169,7 +174,8 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
                 .with_context(|| format!("{}을(를) 만들 수 없습니다", parent.display()))?;
         }
         std::fs::write(&dest, bytes)
-            .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))?;
+            .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))
+            .map_err(Kind::Io.tag())?;
     }
 
     Ok(BuildStats {
@@ -196,7 +202,7 @@ fn render_page(
     md: &markdown::Renderer,
     highlight_css: Option<&str>,
 ) -> Result<(String, search::Entry)> {
-    let template = select_template(page, site, templates)?;
+    let template = select_template(page, site, templates).map_err(Kind::Template.tag())?;
 
     let site_ctx = SiteCtx {
         title: cfg.title.clone(),
@@ -209,12 +215,12 @@ fn render_page(
 
     let rendered = md.render_in(&page.language, &page.body);
     if !rendered.unresolved.is_empty() {
-        anyhow::bail!(
+        return Err(Kind::Content.tag()(anyhow::anyhow!(
             "{}: 해석할 수 없는 내부 링크가 있습니다:\n  {}\n\
              `@/` 는 content/ 기준 소스 경로를 가리켜야 합니다 (예: `@/start/installation.md`).",
             page.source.display(),
             rendered.unresolved.join("\n  ")
-        );
+        )));
     }
 
     // 섹션 인덱스는 자기 자신이 섹션이라 라벨과 제목이 겹친다. 그때는 비워 둔다.
@@ -261,7 +267,8 @@ fn render_page(
 
     let html = templates
         .render(&template, context! { site => site_ctx, page => page_ctx })
-        .with_context(|| format!("{} 렌더 중", page.source.display()))?;
+        .with_context(|| format!("{} 렌더 중", page.source.display()))
+        .map_err(Kind::Template.tag())?;
 
     Ok((html, entry))
 }
