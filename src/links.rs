@@ -88,8 +88,19 @@ impl Resolver {
             Some((p, f)) => (p, Some(f)),
             None => (url, None),
         };
-        let key = translation_key(path.trim_start_matches(PREFIX));
-        let by_lang = self.index.get(&key)?;
+        // 언어 접미사를 떼기 **전 이름을 먼저** 찾는다.
+        //
+        // 여기에는 선언된 언어 목록이 없어서 "짧은 ASCII 꼬리는 언어"라는 어림짐작을
+        // 쓸 수밖에 없는데, 콘텐츠 쪽은 설정에 선언된 코드만 언어로 인정한다. 두 규칙이
+        // 어긋나면 `notes.ab.md` 같은 파일이 키는 `notes.ab`로 잡히고 링크는 `notes`를
+        // 찾아 빌드가 깨진다. 목록을 여기로 한 벌 더 복제하면 그 둘은 언젠가 또 갈라지므로,
+        // 대신 두 형태를 차례로 본다 — 안 뗀 이름이 실제 키일 때만 먼저 걸린다.
+        let raw = path.trim_start_matches(PREFIX).trim_start_matches('/');
+        let raw_stem = raw.strip_suffix(".md").unwrap_or(raw);
+        let by_lang = self.index.get(raw_stem).or_else(|| {
+            self.index
+                .get(&translation_key(path.trim_start_matches(PREFIX)))
+        })?;
 
         // 지금 페이지와 같은 언어판을 먼저 찾는다. 한국어 문서가
         // `@/start/installation.md` 라고 써도 한국어판으로 간다.
@@ -150,6 +161,52 @@ fn translation_key(path: &str) -> String {
             base.to_string()
         }
         _ => stem.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod language_suffix_tests {
+    use super::*;
+
+    fn index(pairs: &[(&str, &str)]) -> LinkIndex {
+        let mut idx = LinkIndex::new();
+        for (key, url) in pairs {
+            idx.entry((*key).to_string())
+                .or_default()
+                .insert("en".to_string(), (*url).to_string());
+        }
+        idx
+    }
+
+    /// 콘텐츠 쪽은 **선언된** 언어 코드만 떼고, 링크 쪽은 목록을 갖고 있지 않다.
+    /// 두 규칙이 어긋나면 멀쩡한 파일을 가리키는 링크가 빌드를 깨뜨린다.
+    #[test]
+    fn a_dotted_name_that_is_not_a_language_still_resolves() {
+        let r = Resolver::new(index(&[("notes.ab", "/notes.ab/")]), "en", "en");
+        assert_eq!(r.resolve("@/notes.ab.md"), Some("/notes.ab/".to_string()));
+        assert!(r.take_unresolved().is_empty());
+    }
+
+    #[test]
+    fn a_real_language_suffix_is_still_stripped() {
+        let r = Resolver::new(index(&[("start/install", "/start/install/")]), "en", "en");
+        assert_eq!(
+            r.resolve("@/start/install.ko.md"),
+            Some("/start/install/".to_string())
+        );
+        assert_eq!(
+            r.resolve("@/start/install.md"),
+            Some("/start/install/".to_string())
+        );
+    }
+
+    #[test]
+    fn fragments_survive_both_paths() {
+        let r = Resolver::new(index(&[("notes.ab", "/notes.ab/")]), "en", "en");
+        assert_eq!(
+            r.resolve("@/notes.ab.md#설치"),
+            Some("/notes.ab/#설치".to_string())
+        );
     }
 }
 

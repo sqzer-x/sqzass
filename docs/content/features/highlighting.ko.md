@@ -52,6 +52,43 @@ syntect 기본 세트의 테마 이름이면 무엇이든 됩니다. 없는 이�
 `string` 같은 이름을 내보내는데, 프로그래밍을 다루는 사이트에서 당신의 스타일시트와
 부딪히기 딱 좋은 일반적인 단어들입니다.
 
+## 줄 번호와 복사 버튼은 당신 몫입니다
+
+둘 다 설정 키가 아니고, `line_numbers`는 아무 일도 안 하는 채로 남기느니 **삭제**했습니다.
+아무것도 하지 않는 설정은 없는 것보다 나쁩니다. 누군가 그걸 켜 놓고 기다리게 되니까요.
+
+줄 번호는 하이라이터가 이미 내보내는 줄에 CSS 카운터를 얹는 것입니다.
+
+```css
+.prose pre code { counter-reset: line; }
+.prose pre code > .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2.5em;
+  text-align: right;
+  margin-right: 1em;
+  color: var(--ink-3);
+  user-select: none;   /* 블록을 복사할 때 번호까지 딸려가지 않게 */
+}
+```
+
+복사 버튼은 열 줄 남짓이고, 언어는 이미 엘리먼트에 붙어 있습니다.
+
+```js
+document.querySelectorAll(".prose pre").forEach(function (pre) {
+  var b = document.createElement("button");
+  b.textContent = "copy";
+  b.addEventListener("click", function () {
+    navigator.clipboard.writeText(pre.textContent);
+  });
+  pre.appendChild(b);
+});
+```
+
+둘 다 당신의 `static/`에 있고, 둘 다 당신이 다시 꾸밀 수 있으며, 둘 다 영원히 같은
+뜻을 유지해야 하는 설정 파일에 키를 하나도 더하지 않습니다.
+
 ## 끄기
 
 `enabled = false`면 강조를 건너뛰고 스타일시트도 만들지 않습니다. 코드 블록에는

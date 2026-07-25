@@ -109,5 +109,19 @@ $ echo $?
 4
 ```
 
+`init`과 `doctor`는 각자의 모양이 있습니다.
+
+```console
+$ sqzass init mysite --json
+{"dir":"mysite","files":["sqzass.toml","content/_index.md","templates/page.html"],"ok":true}
+
+$ sqzass doctor -i mysite --json
+{"findings":[{"check":"base-url","file":"sqzass.toml","message":"…","severity":"warn"}],"gated":1,"ok":false}
+```
+
+`doctor`의 `ok`는 `--fail-on` 기준에 걸린 게 하나라도 있으면 false이고, `gated`가
+그 개수입니다. `file`은 해당 없는 지적에서는 생략됩니다. `check` 문자열은
+안정적입니다 — 스크립트가 잡아야 할 것은 메시지가 아니라 이쪽입니다.
+
 `--json` 없이는 메시지가 stderr로, 결과가 stdout으로 갑니다. 터미널 앞의 사람이
 기대하는 방식입니다.

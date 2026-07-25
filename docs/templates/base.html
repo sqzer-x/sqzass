@@ -21,6 +21,19 @@
 {%- for lang in page.translations %}
 <link rel="alternate" hreflang="{{ lang.code }}" href="{{ site.origin }}{{ lang.url }}">
 {%- endfor %}
+{#- 소셜 카드. sqzass는 <head>에 아무것도 주입하지 않으므로 이건 우리 마크업이다.
+    입력은 전부 이미 컨텍스트에 있다 — 새로 만들 데이터가 없다. #}
+<meta property="og:type" content="{{ "website" if page.is_section else "article" }}">
+<meta property="og:site_name" content="{{ site.title }}">
+<meta property="og:title" content="{{ page.title }}">
+<meta property="og:url" content="{{ page.permalink }}">
+<meta property="og:locale" content="{{ "ko_KR" if ko else "en_US" }}">
+{%- if page.description %}
+<meta property="og:description" content="{{ page.description }}">
+{%- endif %}
+{#- summary_large_image는 이미지가 있을 때만 뜻이 있다. 이미지가 없으면 summary가
+    맞고, 이미지 없이 large를 선언하면 카드가 빈 상자로 나온다. #}
+<meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="{{ asset("css/main.css") }}">
 {%- if site.highlight_css %}
 <link rel="stylesheet" href="{{ site.highlight_css }}">

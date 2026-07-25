@@ -53,6 +53,44 @@ Classes are prefixed `hl-`. Without a prefix, syntect emits class names like
 `source`, `keyword` and `string` — words general enough to collide with your
 own stylesheet on a site about programming.
 
+## Line numbers and a copy button are yours
+
+Neither is a configuration key, and `line_numbers` was deleted rather than
+shipped inert — a setting that does nothing is worse than an absent one, because
+someone sets it and waits.
+
+Line numbers are a CSS counter over the lines the highlighter already emits:
+
+```css
+.prose pre code { counter-reset: line; }
+.prose pre code > .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2.5em;
+  text-align: right;
+  margin-right: 1em;
+  color: var(--ink-3);
+  user-select: none;   /* so copying the block does not copy the numbers */
+}
+```
+
+A copy button is about ten lines, and the language is already on the element:
+
+```js
+document.querySelectorAll(".prose pre").forEach(function (pre) {
+  var b = document.createElement("button");
+  b.textContent = "copy";
+  b.addEventListener("click", function () {
+    navigator.clipboard.writeText(pre.textContent);
+  });
+  pre.appendChild(b);
+});
+```
+
+Both live in your `static/`, both are yours to restyle, and neither adds a key
+to a configuration file that has to keep meaning the same thing forever.
+
 ## Turning it off
 
 `enabled = false` skips highlighting and emits no stylesheet. Code blocks still

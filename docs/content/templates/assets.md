@@ -60,6 +60,27 @@ fingerprint = false
 With `fingerprint = false`, files keep their names and `asset()` still works —
 so you can flip it without editing a template.
 
+## asset-manifest.json
+
+Every build writes one, at the output root, mapping logical names to the URLs
+they were written to:
+
+```json
+{
+  "css/main.css": "/css/main.a1b2c3d4.css",
+  "CNAME": "/CNAME"
+}
+```
+
+It contains every static file, not only the hashed ones, and it is written even
+with `fingerprint = false`. Nothing in sqzass reads it back — it is there so
+that something outside the build can answer the same question `asset()` answers
+inside it: a service worker, a deploy script, a cache warmer.
+
+It is safe to ignore. It is not safe to delete in a cleanup step and then wonder
+why a tool that depended on it stopped working, which is the situation this
+paragraph exists to prevent.
+
 ## The search index is not hashed
 
 `/search-en.json` and `/search-ko.json` keep fixed names. They are fetched by

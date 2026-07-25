@@ -52,8 +52,13 @@ content/start/
 
 ## 번역을 짝짓는 방법
 
-파일명 stem으로 짝짓습니다. `installation.md`와 `installation.ko.md`는 한 페이지의
-두 언어판입니다. 파일명이 달라야 할 때 — 슬러그를 현지화하는 경우 등 — 는 양쪽
+`content/` 기준 경로에서 언어 접미사를 뗀 값으로 짝짓습니다. 그래서
+`start/installation.md`와 `start/installation.ko.md`는 둘 다 `start/installation`을
+키로 갖는 한 페이지의 두 언어판입니다.
+
+이름만이 아니라 **경로**가 중요합니다. `a/notes.md`와 `b/notes.md`는 서로의 번역이
+아니라 다른 두 페이지입니다. 그리고 **선언한 언어인 접미사만** 떼므로,
+`notes.ab.md`라는 파일은 `ab`가 `[languages]`에 없는 한 `notes.ab`를 키로 갖습니다. 파일명이 달라야 할 때 — 슬러그를 현지화하는 경우 등 — 는 양쪽
 파일에 같은 `translation_key`를 주면 됩니다.
 
 ```toml

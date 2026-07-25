@@ -40,7 +40,12 @@ rewrite도 없으므로, 그런 것에 기대는 게 생기면 여기서 가장 
 됩니다. 구글은 한 번 믿을 수 없다고 판단하면 그 사이트의 `lastmod`를 통째로
 무시합니다. 틀린 값이 없는 것보다 나쁘다는 뜻입니다.
 
-`sitemap.xml`이나 `robots.txt`를 직접 `static/`에 넣으면 sqzass는 그 파일을 아예
+`llms.txt`는 모든 페이지의 제목·URL·설명을 담은 평평한 목록으로,
+[llmstxt.org가 제안한 형식](https://llmstxt.org)입니다. 이 사이트에 대해 질문받은
+언어 모델이 전체를 훑는 대신 파일 하나를 읽으면 됩니다. 제목·URL·설명이 이미 있으니
+만드는 데 드는 게 없습니다.
+
+`sitemap.xml`이나 `robots.txt`, `llms.txt`를 직접 `static/`에 넣으면 sqzass는 그 파일을 아예
 만들지 않습니다. 당신 것을 덮어쓰지도, 조용히 무시하지도 않습니다.
 
 ## 각 안내서
@@ -96,6 +101,26 @@ href도, 검색 색인도. 출력 디렉터리는 평평하게 남는데, 그 �
 
 `CNAME`이 필요하면 `static/`에 두면 이름 그대로 복사됩니다. 해시가 붙은 `CNAME`은
 GitHub이 영영 찾지 않을 파일입니다.
+
+## 빌드가 내보내는 것
+
+전체 목록입니다. "호스트를 옮기는 일이 복사"라는 말을 믿는 대신 확인할 수 있으라고
+적어 둡니다.
+
+| | |
+|---|---|
+| `static/`의 전부 | 경로와 이름 그대로. CSS와 JS에만 콘텐츠 해시 |
+| `assets/highlight.<해시>.css` | `[highlight] enabled = false`가 아니면 |
+| `asset-manifest.json` | 논리 이름 → 실제 URL, 항상 |
+| `<경로>/index.html` | 페이지마다 하나 |
+| `search-<언어>.json` | 언어마다 하나 |
+| `sitemap.xml`, `robots.txt` | 같은 이름을 `static/`에 두지 않았다면 |
+| `llms.txt` | 같은 조건 |
+| `404.html` | `templates/404.html`이 있을 때 |
+| alias 스텁 | `aliases` 항목마다 하나 |
+| `.nojekyll` | 항상. `static/.nojekyll`보다 이쪽이 이깁니다 |
+
+그 밖엔 없고, 출력 디렉터리 밖으로는 아무것도 나가지 않습니다.
 
 ## 결정성
 

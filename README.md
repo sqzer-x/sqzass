@@ -61,6 +61,10 @@ Body goes here.
   inside `검색엔진최적화` is ever found.
 - **One binary, no runtime.** No Node, no Python, no system libraries.
 
+Runtime messages — `--help`, errors, `doctor` findings, the dev server log — are
+in Korean, with no locale switch. Error identifiers (`SQZASS_E_CONTENT`) and
+`doctor` check names are ASCII and stable, so scripts have something to match on.
+
 ## Building
 
 ```bash

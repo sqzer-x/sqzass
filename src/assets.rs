@@ -214,6 +214,46 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 
+    /// 호스트별 설정 파일은 **이름이 곧 계약**이다. `_headers.9f8e7d6c`는 Netlify가
+    /// 영영 찾지 않을 파일이고, `.domains.abc`도 Codeberg가 찾지 않는다. 이게
+    /// 조용히 깨지면 배포는 성공하면서 도메인만 안 붙는다.
+    #[test]
+    fn host_config_files_pass_through_with_their_names() {
+        let root =
+            std::env::temp_dir().join(format!("sqzass-assets-passthru-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let s = root.join("static");
+        std::fs::create_dir_all(s.join(".well-known")).unwrap();
+        for (name, body) in [
+            ("_headers", "/*\n  X-Frame-Options: DENY\n"),
+            ("_redirects", "/old /new 301\n"),
+            (".domains", "example.com\n"),
+            ("CNAME", "example.com\n"),
+            ("robots.txt", "User-agent: *\n"),
+        ] {
+            std::fs::write(s.join(name), body).unwrap();
+        }
+        std::fs::write(s.join(".well-known/security.txt"), "Contact: x\n").unwrap();
+
+        let a = Assets::collect(&root, &cfg(), "").unwrap();
+        for name in [
+            "_headers",
+            "_redirects",
+            ".domains",
+            "CNAME",
+            "robots.txt",
+            ".well-known/security.txt",
+        ] {
+            assert_eq!(
+                a.url(name),
+                Some(format!("/{name}").as_str()),
+                "{name} 의 이름이 바뀌었다"
+            );
+            assert!(a.files.contains_key(name), "{name} 이 출력에 없다");
+        }
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
     #[test]
     fn missing_static_dir_is_not_an_error() {
         let root = std::env::temp_dir().join("sqzass-assets-nonexistent-xyz");

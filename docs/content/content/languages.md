@@ -54,8 +54,14 @@ Empty list, no switcher. There is no state where the button lies.
 
 ## How translations are matched
 
-By filename stem: `installation.md` and `installation.ko.md` are the same page
-in two languages. When the filenames have to differ — a localised slug, say —
+By the path under `content/` with the language suffix removed — so
+`start/installation.md` and `start/installation.ko.md` both key on
+`start/installation` and are the same page in two languages.
+
+The path matters, not just the name: `a/notes.md` and `b/notes.md` are two
+different pages, not translations of each other. Only a suffix that is a
+language you declared is stripped, so a file named `notes.ab.md` keys on
+`notes.ab` unless `ab` is in your `[languages]`. When the filenames have to differ — a localised slug, say —
 set `translation_key` in both files to the same value.
 
 ```toml

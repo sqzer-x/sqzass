@@ -62,6 +62,22 @@ it. Results are capped at twelve, which is as many as anyone reads.
 Code blocks are indexed, because in documentation people search for the command
 they half-remember.
 
+## The row schema
+
+The client is yours to build, so here is what it reads. One row per page:
+
+| Key | | |
+|---|---|---|
+| `t` | title | always present |
+| `d` | description | omitted when empty |
+| `u` | URL | always present, and it carries the subpath if you have one |
+| `s` | parent section title | omitted when empty, and on section index pages |
+| `c` | body plain text, code blocks included | always present |
+
+Keys are one character because they repeat on every row. `"title"` instead of
+`"t"` costs a few tens of kilobytes across a few hundred pages, for a file
+nobody reads by hand.
+
 ## The client
 
 `search.js` on this site is about 150 lines and has no dependencies. The dialog

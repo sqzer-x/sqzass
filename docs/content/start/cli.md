@@ -111,5 +111,19 @@ $ echo $?
 4
 ```
 
+`init` and `doctor` have their own shapes:
+
+```console
+$ sqzass init mysite --json
+{"dir":"mysite","files":["sqzass.toml","content/_index.md","templates/page.html"],"ok":true}
+
+$ sqzass doctor -i mysite --json
+{"findings":[{"check":"base-url","file":"sqzass.toml","message":"…","severity":"warn"}],"gated":1,"ok":false}
+```
+
+For `doctor`, `ok` is false whenever anything reached the `--fail-on` gate, and
+`gated` counts those. `file` is omitted when a finding has none. The `check`
+strings are stable — they are what a script should match on, not the message.
+
 Without `--json`, messages go to stderr and results to stdout, which is what a
 person at a terminal expects.

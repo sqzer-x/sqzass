@@ -43,6 +43,44 @@ and `weight`.
 | `page.is_section` | |
 | `page.extra` | Your `[extra]` table. |
 
+## page.children is two things
+
+On the root `_index.md` it holds the top-level sections. On any other section it
+holds that section's own pages, followed by its subsections. Both are what a
+listing template needs, and neither is obvious from the name.
+
+```html
+{% for child in page.children %}
+<a href="{{ child.url }}">{{ child.title }}</a>
+{%- if child.description %}<p>{{ child.description }}</p>{% endif %}
+{% endfor %}
+```
+
+Ordinary pages have an empty list.
+
+## page.toc_entries
+
+`{level, id, title, children}`, nested by relative depth — an h2 followed by an
+h4 nests, without assuming the levels are consecutive. It is collected for every
+page, whether or not `toc = true`; the front matter field is the author's
+intent, and the data is there either way so a template can decide.
+
+Rendering it needs a recursive macro:
+
+```html
+{% macro toc_list(entries) %}
+<ul>
+  {%- for e in entries %}
+  <li><a href="#{{ e.id }}">{{ e.title }}</a>
+    {%- if e.children %}{{ toc_list(e.children) }}{% endif %}
+  </li>
+  {%- endfor %}
+</ul>
+{% endmacro %}
+
+{% if page.toc and page.toc_entries %}{{ toc_list(page.toc_entries) }}{% endif %}
+```
+
 ## asset()
 
 `asset("css/main.css")` returns the hashed URL that file was written to:

@@ -42,7 +42,12 @@ bytes. Git commit times are accurate but need full history, and
 page with the same date. Google ignores a site's `lastmod` entirely once it
 finds it untrustworthy, which makes a wrong one worse than none.
 
-Put your own `sitemap.xml` or `robots.txt` in `static/` and sqzass will not
+`llms.txt` is a flat list of every page — title, URL and description — in the
+[format proposed at llmstxt.org](https://llmstxt.org). A language model asked
+about your site can read one file instead of crawling the whole thing. It costs
+nothing to emit because the title, URL and description already exist.
+
+Put your own `sitemap.xml`, `robots.txt` or `llms.txt` in `static/` and sqzass will not
 generate that file at all. It does not overwrite yours, and it does not
 silently ignore it either.
 
@@ -102,6 +107,26 @@ output through Jekyll, which swallows directories beginning with `_`.
 
 `CNAME`, if you need one, goes in `static/` and is copied through with its name
 intact — a hashed `CNAME` is a file GitHub will never look for.
+
+## What a build emits
+
+The complete list, so that "moving hosts is a copy" is something you can check
+rather than take on trust:
+
+| | |
+|---|---|
+| everything in `static/` | paths and names intact; CSS and JS get a content hash |
+| `assets/highlight.<hash>.css` | unless `[highlight] enabled = false` |
+| `asset-manifest.json` | logical name → written URL, always |
+| `<path>/index.html` | one per page |
+| `search-<lang>.json` | one per language |
+| `sitemap.xml`, `robots.txt` | unless `static/` supplied one with that name |
+| `llms.txt` | same terms |
+| `404.html` | when `templates/404.html` exists |
+| alias stubs | one per `aliases` entry |
+| `.nojekyll` | always, and it wins over a `static/.nojekyll` |
+
+Nothing else, and nothing outside the output directory.
 
 ## Determinism
 

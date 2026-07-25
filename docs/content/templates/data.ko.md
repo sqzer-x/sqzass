@@ -42,6 +42,44 @@ toc = true
 | `page.is_section` | |
 | `page.extra` | 당신의 `[extra]` 테이블. |
 
+## page.children은 두 가지입니다
+
+루트 `_index.md`에서는 최상위 섹션들이 담기고, 그 밖의 섹션에서는 그 섹션의 자식
+페이지들 뒤에 하위 섹션들이 붙습니다. 둘 다 목록 템플릿이 필요로 하는 것이고, 이름만
+봐서는 알 수 없습니다.
+
+```html
+{% for child in page.children %}
+<a href="{{ child.url }}">{{ child.title }}</a>
+{%- if child.description %}<p>{{ child.description }}</p>{% endif %}
+{% endfor %}
+```
+
+일반 페이지에서는 빈 목록입니다.
+
+## page.toc_entries
+
+`{level, id, title, children}`이고 상대적 깊이로 중첩됩니다. h2 다음에 h4가 와도
+중첩되며, 레벨이 연속이라고 가정하지 않습니다. `toc = true`든 아니든 모든 페이지에서
+수집됩니다. front matter의 `toc`는 저자의 의사이고, 데이터는 어느 쪽이든 있으니
+템플릿이 판단하면 됩니다.
+
+그리는 데는 재귀 매크로가 필요합니다.
+
+```html
+{% macro toc_list(entries) %}
+<ul>
+  {%- for e in entries %}
+  <li><a href="#{{ e.id }}">{{ e.title }}</a>
+    {%- if e.children %}{{ toc_list(e.children) }}{% endif %}
+  </li>
+  {%- endfor %}
+</ul>
+{% endmacro %}
+
+{% if page.toc and page.toc_entries %}{{ toc_list(page.toc_entries) }}{% endif %}
+```
+
 ## asset()
 
 `asset("css/main.css")`은 그 파일이 실제로 쓰인 해시 붙은 URL을 돌려줍니다.

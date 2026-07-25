@@ -29,7 +29,7 @@ title = "Installation"
 | `slug` | string | filename stem | The last URL segment. |
 | `template` | string | — | Render with this template instead of the usual one. |
 | `toc` | bool | `false` | Whether a table of contents should be shown. |
-| `translation_key` | string | filename stem | Links this page to its translations. |
+| `translation_key` | string | see below | Links this page to its translations. |
 | `extra` | table | `{}` | Anything you want. Reaches templates as `page.extra`. |
 
 `toc` is the author's intent, not the data: the table of contents is collected
