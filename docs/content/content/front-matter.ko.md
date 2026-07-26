@@ -25,6 +25,7 @@ title = "설치"
 | `description` | 문자열 | `""` | 템플릿의 `<meta name="description">`과 검색 결과에 쓰입니다. |
 | `weight` | 정수 | `0` | 섹션 안에서의 정렬 순서. 작을수록 앞. |
 | `draft` | bool | `false` | `--drafts`가 없으면 빌드에서 빠집니다. |
+| `date` | TOML 날짜 | — | 발행 날짜. 피드와 `sort_by = "date"`가 씁니다. |
 | `slug` | 문자열 | 파일명 stem | URL의 마지막 세그먼트. |
 | `template` | 문자열 | — | 평소 쓰던 것 대신 이 템플릿으로 렌더합니다. |
 | `toc` | bool | `false` | 목차를 보여줄지 여부. |
@@ -41,7 +42,7 @@ title = "설치"
 
 | 필드 | 타입 | 기본값 | |
 |---|---|---|---|
-| `sort_by` | `"weight"` \| `"title"` | 사이트 기본값 | 이 섹션이 자식 페이지를 정렬하는 기준. |
+| `sort_by` | `"weight"` \| `"title"` \| `"date"` | 사이트 기본값 | 이 섹션이 자식 페이지를 정렬하는 기준. |
 | `page_template` | 문자열 | — | 이 섹션 페이지들의 기본 템플릿. |
 
 ## extra

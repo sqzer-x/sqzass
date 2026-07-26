@@ -6,6 +6,7 @@ pub mod content;
 pub mod doctor;
 pub mod emit;
 pub mod error;
+pub mod feed;
 pub mod highlight;
 pub mod i18n;
 pub mod init;
@@ -106,13 +107,69 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
         None
     };
 
+    // 피드를 먼저 만든다. 페이지가 <head>에 자동 발견 링크를 넣으려면 자기 언어에
+    // 피드가 있는지를 렌더 시점에 알아야 한다.
+    let mut feeds: BTreeMap<String, String> = BTreeMap::new();
+    {
+        let mut by_lang: BTreeMap<&str, Vec<&Page>> = BTreeMap::new();
+        for p in &pages {
+            by_lang.entry(p.language.as_str()).or_default().push(p);
+        }
+        for (lang, langs_pages) in by_lang {
+            let home = if lang == cfg.default_language {
+                format!("{}/", cfg.base_path())
+            } else {
+                format!("{}/{lang}/", cfg.base_path())
+            };
+            let self_url = format!("{}/{}", cfg.base_path(), feed::path(lang));
+            if let Some(xml) = feed::atom(
+                &langs_pages,
+                lang,
+                &cfg.title,
+                cfg.origin(),
+                &home,
+                &self_url,
+            ) {
+                feeds.insert(lang.to_string(), xml);
+            }
+        }
+    }
+
     // 사이트가 실제로 내보내는 URL 전체. 이게 있어야 `[설치](/start/install/)` 같은
     // 평범한 절대 경로 링크도 빌드가 검증할 수 있다 — 지금까지는 `@/`만 봤다.
+    let base = cfg.base_path();
+    let generated = [
+        seo::SITEMAP_PATH,
+        seo::ROBOTS_PATH,
+        emit::LLMS_PATH,
+        emit::NOT_FOUND_PATH,
+        assets::MANIFEST_PATH,
+    ];
     let known = links::KnownUrls {
         urls: pages
             .iter()
             .map(|p| p.url.clone())
             .chain(assets.manifest.values().cloned())
+            // 빌드가 만드는 파일도 존재하는 URL이다. 빼 두면 우리 사이트의
+            // 피드나 sitemap을 가리키는 링크가 "어디도 가리키지 않는다"며
+            // 빌드를 깨뜨린다 — 실제로 그랬다.
+            .chain(generated.iter().map(|p| format!("{base}/{p}")))
+            .chain(
+                feeds
+                    .keys()
+                    .map(|lang| format!("{base}/{}", feed::path(lang))),
+            )
+            // 설정의 [languages]가 아니라 **실제 페이지의 언어**로 만든다.
+            // 언어를 선언하지 않은 사이트도 기본 언어로 색인을 내보내므로,
+            // 설정을 기준으로 삼으면 그 사이트에서 색인 링크가 죽는다.
+            .chain(
+                pages
+                    .iter()
+                    .map(|p| p.language.as_str())
+                    .collect::<std::collections::BTreeSet<_>>()
+                    .into_iter()
+                    .map(|lang| format!("{base}/{}", search::path(lang))),
+            )
             .collect(),
     };
     md = md.with_known_urls(known);
@@ -140,6 +197,10 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             &templates,
             &md,
             highlight_css_url.as_deref(),
+            feeds
+                .contains_key(&page.language)
+                .then(|| format!("{}/{}", cfg.base_path(), feed::path(&page.language)))
+                .as_deref(),
         )?;
         out.files.insert(
             page.out_path.to_string_lossy().replace('\\', "/"),
@@ -186,6 +247,14 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             .insert(emit::NOT_FOUND_PATH.into(), html.into_bytes());
     }
 
+    for (lang, xml) in feeds {
+        // `static/`에 같은 이름이 있으면 그쪽이 이긴다. sitemap·robots과 같은
+        // 규칙이다 — 직접 넣은 파일이 조용히 덮이는 건 어느 쪽이든 나쁘다.
+        out.files
+            .entry(feed::path(&lang))
+            .or_insert_with(|| xml.into_bytes());
+    }
+
     out.files.entry(emit::LLMS_PATH.into()).or_insert_with(|| {
         emit::llms_txt(&cfg.title, &cfg.description, cfg.origin(), &pages).into_bytes()
     });
@@ -203,6 +272,8 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     // GitHub Pages는 이 파일이 없으면 출력을 Jekyll로 한 번 더 굴려서
     // `_`로 시작하는 디렉터리를 통째로 삼킨다.
     out.files.insert(".nojekyll".into(), Vec::new());
+
+    check_output_collisions(&out).map_err(Kind::Content.tag())?;
 
     Ok(out)
 }
@@ -254,6 +325,31 @@ fn resolve_output_dir(opts: &BuildOptions, cfg: &Config) -> PathBuf {
     }
 }
 
+/// 한 경로가 파일이면서 동시에 디렉터리일 수는 없다.
+///
+/// `feed-en.xml`이라는 이름의 페이지를 만들면 출력에 `feed-en.xml`(파일)과
+/// `feed-en.xml/index.html`(디렉터리)이 함께 생긴다. 쓰는 단계에서야
+/// `File exists (os error 17)`로 죽는데, 그때는 이미 절반이 디스크에 나가 있고
+/// 메시지는 원인을 하나도 말해 주지 않는다. URL 충돌과 같은 부류이므로 같은
+/// 자리에서, 같은 방식으로 막는다.
+fn check_output_collisions(out: &BuildOutput) -> Result<()> {
+    for key in out.files.keys() {
+        let prefix = format!("{key}/");
+        // BTreeMap이 정렬돼 있으므로 접두사를 공유하는 이웃만 보면 된다.
+        if let Some(other) = out.files.range(prefix.clone()..).next()
+            && other.0.starts_with(&prefix)
+        {
+            anyhow::bail!(
+                "출력 경로 충돌: `{key}` 가 파일이면서 동시에 `{}` 의 디렉터리입니다.\n\
+                 빌드가 만드는 파일과 같은 이름의 페이지가 있는지 확인하세요 \
+                 (sitemap.xml, robots.txt, llms.txt, 404.html, feed-<언어>.xml, search-<언어>.json).",
+                other.0
+            );
+        }
+    }
+    Ok(())
+}
+
 /// 페이지 HTML과 그 페이지의 검색 색인 행을 함께 낸다. 본문 평문은 렌더 과정에서
 /// 이미 나오므로, 색인을 위해 문서를 다시 파싱하지 않는다.
 fn render_page(
@@ -263,6 +359,7 @@ fn render_page(
     templates: &Templates,
     md: &markdown::Renderer,
     highlight_css: Option<&str>,
+    feed_url: Option<&str>,
 ) -> Result<(String, search::Entry)> {
     let template = select_template(page, site, templates).map_err(Kind::Template.tag())?;
 
@@ -273,6 +370,7 @@ fn render_page(
         base_path: cfg.base_path().to_string(),
         language: page.language.clone(),
         sections: site::section_ctx(site.sections(&page.language), site.pages),
+        feed: feed_url.map(str::to_string),
         highlight_css: highlight_css.map(str::to_string),
     };
 
@@ -332,6 +430,7 @@ fn render_page(
         next,
         is_section: page.is_section,
         extra: page.front.extra.clone(),
+        date: page.front.date.as_ref().and_then(feed::PageDate::from_toml),
     };
 
     let html = templates
@@ -363,6 +462,7 @@ fn render_standalone(
         base_path: cfg.base_path().to_string(),
         language: language.clone(),
         sections: site::section_ctx(site.sections(&language), site.pages),
+        feed: None,
         highlight_css: highlight_css.map(str::to_string),
     };
 
@@ -384,6 +484,7 @@ fn render_standalone(
         next: None,
         is_section: false,
         extra: toml::Table::new(),
+        date: None,
     };
 
     templates

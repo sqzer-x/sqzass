@@ -26,6 +26,7 @@ title = "Installation"
 | `description` | string | `""` | Used by templates for `<meta name="description">` and in search results. |
 | `weight` | integer | `0` | Sort order within a section. Lower comes first. |
 | `draft` | bool | `false` | Excluded from the build unless `--drafts`. |
+| `date` | TOML date | — | Publication date. Feeds and `sort_by = "date"` use it. |
 | `slug` | string | filename stem | The last URL segment. |
 | `template` | string | — | Render with this template instead of the usual one. |
 | `toc` | bool | `false` | Whether a table of contents should be shown. |
@@ -43,7 +44,7 @@ These do nothing on an ordinary page, and belong in an `_index.md`.
 
 | Field | Type | Default | |
 |---|---|---|---|
-| `sort_by` | `"weight"` \| `"title"` | site default | How this section orders its pages. |
+| `sort_by` | `"weight"` \| `"title"` \| `"date"` | site default | How this section orders its pages. |
 | `page_template` | string | — | Default template for pages in this section. |
 
 ## Extra

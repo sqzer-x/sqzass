@@ -150,6 +150,10 @@ impl Default for Nav {
 pub enum SortBy {
     Weight,
     Title,
+    /// **최신이 먼저.** weight와 title은 오름차순인데 이것만 내림차순인 건
+    /// 날짜순 목록에서 사람이 기대하는 게 최신 글이기 때문이다. 날짜가 없는
+    /// 페이지는 뒤로 간다.
+    Date,
 }
 
 fn default_language() -> String {
@@ -177,6 +181,16 @@ impl Config {
     }
 
     fn validate(&self) -> Result<()> {
+        // canonical URL, sitemap `<loc>`, Atom의 `id`, OpenGraph의 `og:url`이
+        // 전부 여기서 나온다. 스킴이 없으면 그것들이 전부 상대 참조가 되는데,
+        // RFC 4287은 상대 참조를 아예 금지하고 나머지도 조용히 틀린다.
+        if !self.base_url.contains("://") {
+            anyhow::bail!(
+                "base_url = \"{}\" 에 스킴이 없습니다. 절대 URL이어야 합니다 \
+                 (예: https://example.com). canonical·sitemap·피드가 전부 이 값에서 나옵니다.",
+                self.base_url
+            );
+        }
         if !self.languages.is_empty() && !self.languages.contains_key(&self.default_language) {
             anyhow::bail!(
                 "default_language = \"{}\" 인데 [languages.{}] 가 정의되어 있지 않습니다",
@@ -256,6 +270,16 @@ mod tests {
     }
 
     /// 조용히 무시되는 설정은 "깨진 참조는 빌드를 멈춘다"의 정확한 위반이다.
+    #[test]
+    fn base_url_must_be_absolute() {
+        let cfg: Config = toml::from_str("title = \"t\"\nbase_url = \"example.com\"\n").unwrap();
+        let err = cfg.validate().unwrap_err().to_string();
+        assert!(err.contains("스킴이 없습니다"), "실제: {err}");
+        let ok: Config =
+            toml::from_str("title = \"t\"\nbase_url = \"https://example.com\"\n").unwrap();
+        assert!(ok.validate().is_ok());
+    }
+
     #[test]
     fn unknown_keys_are_an_error() {
         let err = toml::from_str::<Config>(

@@ -211,6 +211,9 @@ pub struct SiteCtx {
     pub language: String,
     /// 이 언어의 최상위 섹션들. 사이드바는 여기서 만든다.
     pub sections: Vec<crate::site::SectionCtx>,
+    /// 이 언어의 Atom 피드 URL. 날짜 있는 페이지가 하나도 없으면 `None`이고,
+    /// 그때 템플릿은 자동 발견 링크를 넣지 않으면 된다.
+    pub feed: Option<String>,
     /// 생성된 하이라이트 스타일시트 URL. 강조가 꺼져 있으면 `None`.
     pub highlight_css: Option<String>,
 }
@@ -243,6 +246,9 @@ pub struct PageCtx {
     pub is_section: bool,
     /// front matter의 `[extra]`. sqzass는 여기를 읽지 않는다 — 템플릿이 읽는다.
     pub extra: toml::Table,
+    /// 발행 날짜. 없으면 없다. 서식 필터 대신 조각을 준다 —
+    /// `{{ page.date.year }}년 {{ page.date.month }}월` 처럼 템플릿이 조립한다.
+    pub date: Option<crate::feed::PageDate>,
 }
 
 #[cfg(test)]

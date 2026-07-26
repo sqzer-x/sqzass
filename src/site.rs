@@ -361,18 +361,34 @@ fn sort_section(sec: &mut Section, pages: &[Page], cfg: &Config) {
         .and_then(|i| pages[i].front.sort_by)
         .unwrap_or(cfg.nav.sort_by);
 
-    let key = |i: &usize| -> (i64, String) {
+    // 날짜순은 **내림차순**이고 날짜 없는 페이지는 뒤로 간다. 정렬 키를 뒤집는
+    // 대신 없는 날짜를 0으로 두면 그것들이 맨 앞으로 올라온다.
+    let date_key = |i: &usize| -> (std::cmp::Reverse<i64>, String) {
         let p = &pages[*i];
-        match sort_by {
-            SortBy::Weight => (p.front.weight, p.title.clone()),
-            SortBy::Title => (0, p.title.clone()),
-        }
+        let k = p
+            .front
+            .date
+            .as_ref()
+            .and_then(crate::feed::PageDate::from_toml)
+            .map_or(0, |d| d.sort_key());
+        (std::cmp::Reverse(k), p.title.clone())
     };
-    sec.pages.sort_by_key(key);
 
+    match sort_by {
+        SortBy::Date => sec.pages.sort_by_key(date_key),
+        _ => sec.pages.sort_by_key(|i: &usize| {
+            let p = &pages[*i];
+            match sort_by {
+                SortBy::Title => (0, p.title.clone()),
+                _ => (p.front.weight, p.title.clone()),
+            }
+        }),
+    }
+
+    // 하위 섹션에는 날짜가 없다. 날짜순 섹션에서도 제목순으로 둔다.
     sec.subsections.sort_by_key(|s| match sort_by {
         SortBy::Weight => (s.weight, s.title.clone()),
-        SortBy::Title => (0, s.title.clone()),
+        _ => (0, s.title.clone()),
     });
 
     for sub in &mut sec.subsections {
@@ -474,6 +490,33 @@ mod tests {
 
     fn fm(title: &str, extra: &str) -> String {
         format!("+++\ntitle = \"{title}\"\n{extra}+++\n\nbody\n")
+    }
+
+    /// weight와 title은 오름차순인데 date만 내림차순이다. 날짜순 목록에서
+    /// 사람이 기대하는 건 최신 글이고, 날짜 없는 글은 뒤로 가야 한다.
+    #[test]
+    fn date_sorting_is_newest_first_and_undated_last() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "dates",
+            &[
+                ("_index.md", &fm("Home", "")),
+                ("posts/_index.md", &fm("Posts", "sort_by = \"date\"\n")),
+                ("posts/a.md", &fm("A", "date = 2026-01-15\n")),
+                ("posts/b.md", &fm("B", "date = 2026-09-01\n")),
+                ("posts/c.md", &fm("C", "date = 2026-05-20\n")),
+                ("posts/none.md", &fm("None", "")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let posts = &site.sections("en")[0];
+        let titles: Vec<&str> = posts
+            .pages
+            .iter()
+            .map(|&i| pages[i].title.as_str())
+            .collect();
+        assert_eq!(titles, vec!["B", "C", "A", "None"], "실제: {titles:?}");
     }
 
     #[test]

@@ -8,7 +8,8 @@ Vercel, Cloudflare Pages, or a plain directory served over HTTP.
 
 > **Status: early, and honest about it.** The pipeline works end to end —
 > markdown, sections, templates, syntax highlighting, table of contents, the
-> asset pipeline, search, a dev server with live reload, sitemap and robots.txt.
+> asset pipeline, search, a dev server with live reload, sitemap, robots.txt and
+> Atom feeds.
 > The documentation site at <https://sqzass.sqzer.com> is built with it, from
 > `docs/` in this repository, and CI builds that site with the binary it just
 > compiled. There are no prebuilt binaries yet, and no theme system.

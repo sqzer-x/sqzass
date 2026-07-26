@@ -106,7 +106,7 @@ See [Static assets](@/templates/assets.md).
 
 | Key | Default | |
 |---|---|---|
-| `sort_by` | `"weight"` | `weight` or `title`. A section can override it. |
+| `sort_by` | `"weight"` | `weight`, `title` or `date`. A section can override it. |
 
 ## Overriding from the command line
 

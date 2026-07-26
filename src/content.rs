@@ -20,6 +20,9 @@ pub struct FrontMatter {
     pub description: String,
     pub weight: i64,
     pub draft: bool,
+    /// 발행 날짜. `sort_by = "date"`와 피드가 쓴다.
+    /// TOML 날짜라 `2026-07-26` 도, `2026-07-26T09:30:00Z` 도 된다.
+    pub date: Option<toml::value::Datetime>,
     /// 기본은 파일명 stem.
     pub slug: Option<String>,
     pub template: Option<String>,
@@ -102,6 +105,19 @@ fn parse_page(path: &Path, content_root: &Path, cfg: &Config) -> Result<Page> {
     // 이 한 줄이 없으면 에러가 가리키는 줄이 항상 하나씩 위를 가리킨다.
     let front: FrontMatter = toml::from_str(&format!("\n{fm_text}"))
         .with_context(|| format!("{}: front matter 파싱 실패", path.display()))?;
+
+    // TOML은 `10:30:00` 같은 시각도 날짜 타입으로 받는다. 그걸 그대로 두면
+    // 피드에도 정렬에도 쓰이지 못한 채 조용히 사라지고, 저자는 날짜를 적었다고
+    // 믿는다. 조용히 버리는 대신 멈춘다.
+    if let Some(dt) = &front.date
+        && dt.date.is_none()
+    {
+        anyhow::bail!(
+            "{}: date = {dt} 에 날짜가 없습니다 (시각만 있습니다).\n\
+             `2026-07-26` 이나 `2026-07-26T09:30:00+09:00` 처럼 적으세요.",
+            path.display()
+        );
+    }
 
     let title = front.title.clone().ok_or_else(|| {
         anyhow::anyhow!(

@@ -54,9 +54,14 @@ URL is a build error**, not a last-writer-wins race.
 ## Ordering
 
 Sections sort their pages by `weight` (ascending), and pages without one fall
-back to their title. Set `sort_by = "title"` on a section's `_index.md` to sort
-by title instead, or `[nav] sort_by` in `sqzass.toml` to change the default for
-the whole site.
+back to their title. Set `sort_by` on a section's `_index.md`, or `[nav] sort_by`
+in `sqzass.toml` to change the default for the whole site.
+
+| | |
+|---|---|
+| `weight` | Ascending. The default. |
+| `title` | Ascending. |
+| `date` | **Descending** — newest first, undated pages last. See [Feeds](@/features/feeds.md). |
 
 ## Drafts
 

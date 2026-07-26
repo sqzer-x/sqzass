@@ -70,6 +70,9 @@ pub fn robots(origin: &str, base_path: &str) -> String {
 fn escape_into(out: &mut String, s: &str) {
     for ch in s.chars() {
         match ch {
+            // XML 1.0은 C0 제어문자를 문자 참조로도 담을 수 없다. 지금은 URL과
+            // 언어 코드만 지나가지만, 언젠가 제목이 지나가면 sitemap 전체가 깨진다.
+            c if c < '\u{20}' && c != '\t' && c != '\n' && c != '\r' => {}
             '&' => out.push_str("&amp;"),
             '<' => out.push_str("&lt;"),
             '>' => out.push_str("&gt;"),

@@ -51,6 +51,15 @@ class of bug you find in production rather than in the build.
 
 Image sources go through the same path, so `![](@/images/x.png)` works too.
 
+## Generated files are link targets too
+
+`/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/404.html`, `/feed-<lang>.xml` and
+`/search-<lang>.json` are pages as far as the checker is concerned — the build
+produces them, so a link to one resolves.
+
+The exception is anything content-hashed. `/css/main.css` does not exist after a
+build; `asset("css/main.css")` in a template is the way to reach it.
+
 ## Everything else is left alone
 
 External links, anchors, `mailto:` — untouched. sqzass only claims the `@/`

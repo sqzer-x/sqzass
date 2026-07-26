@@ -105,7 +105,7 @@ CommonMark의 flanking 규칙은 단어 사이에 공백을 두는 언어를 전
 
 | 키 | 기본값 | |
 |---|---|---|
-| `sort_by` | `"weight"` | `weight` 또는 `title`. 섹션이 각자 덮어쓸 수 있습니다. |
+| `sort_by` | `"weight"` | `weight`, `title`, `date`. 섹션이 각자 덮어쓸 수 있습니다. |
 
 ## 명령줄에서 덮어쓰기
 

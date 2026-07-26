@@ -16,7 +16,7 @@ use walkdir::WalkDir;
 /// 있어서, 해시는 `asset()`으로 조회하는 것들에만 적용한다.
 const FINGERPRINTED: &[&str] = &["css", "js"];
 
-const MANIFEST_PATH: &str = "asset-manifest.json";
+pub const MANIFEST_PATH: &str = "asset-manifest.json";
 
 #[derive(Debug, Default)]
 pub struct Assets {

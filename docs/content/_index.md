@@ -40,8 +40,8 @@ matches substrings rather than words, which is the only way `최적화` inside
 ## Status
 
 Early, and honest about it: syntax highlighting, navigation, the table of
-contents, the asset pipeline, the dev server and search all work. Feeds and a
-theme system do not exist yet. Start at [Getting started](@/start/_index.md).
+contents, the asset pipeline, the dev server, search and Atom feeds all work.
+A theme system does not exist yet. Start at [Getting started](@/start/_index.md).
 
 [comrak]: https://github.com/kivikakk/comrak
 [minijinja]: https://github.com/mitsuhiko/minijinja

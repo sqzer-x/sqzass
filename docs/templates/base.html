@@ -16,6 +16,11 @@
 <title>{% if page.url == home %}{{ site.title }} — {{ t("tagline") }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
 {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
 <link rel="canonical" href="{{ page.permalink }}">
+{#- 피드 자동 발견. 이 언어에 날짜 있는 페이지가 하나도 없으면 site.feed가 없고,
+    그때는 링크도 걸지 않는다 — 빈 피드를 가리키는 링크가 제일 나쁘다. #}
+{%- if site.feed %}
+<link rel="alternate" type="application/atom+xml" title="{{ site.title }}" href="{{ site.feed }}">
+{%- endif %}
 {#- 파비콘은 CSS 필터가 닿지 않는다. 탭 배경이 어두울 때 검은 선화는 보이지
     않으므로 흰 선 버전을 따로 준다. media를 이해 못 하는 브라우저는 마지막
     것을 쓰므로, 밝은 탭이 기본인 쪽을 뒤에 둔다. #}

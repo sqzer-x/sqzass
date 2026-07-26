@@ -55,8 +55,14 @@ UTF-8 그대로 둡니다.
 ## 정렬
 
 섹션은 자식 페이지를 `weight` 오름차순으로 정렬하고, `weight`가 없으면 제목으로
-넘어갑니다. 섹션의 `_index.md`에 `sort_by = "title"`을 주면 제목 기준이 되고,
-`sqzass.toml`의 `[nav] sort_by`로 사이트 전체 기본값을 바꿀 수 있습니다.
+넘어갑니다. 섹션의 `_index.md`에 `sort_by`를 주거나, `sqzass.toml`의
+`[nav] sort_by`로 사이트 전체 기본값을 바꿀 수 있습니다.
+
+| | |
+|---|---|
+| `weight` | 오름차순. 기본값. |
+| `title` | 오름차순. |
+| `date` | **내림차순** — 최신이 먼저, 날짜 없는 페이지는 뒤. [피드](@/features/feeds.md) 참고. |
 
 ## 드래프트
 
