@@ -180,6 +180,21 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
         .with_assets(assets.manifest.clone())
         .with_i18n(i18n::load(root).map_err(Kind::Template.tag())?);
 
+    // 사이드바 컨텍스트는 언어당 한 번만 만들어 미리 minijinja 값으로 직렬화한다.
+    // 페이지마다 전 섹션·전 페이지를 재조립해 다시 직렬화하면 페이지당 O(n),
+    // 빌드 전체 O(n²)다 — 5000페이지 실측에서 링크 표 복사와 함께 지배 항이었다.
+    // `Value` 복사는 참조 카운트라 페이지마다 나눠 주는 비용은 포인터 복사다.
+    let sections_by_lang: BTreeMap<&str, minijinja::Value> = pages
+        .iter()
+        .map(|p| p.language.as_str())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .map(|lang| {
+            let ctx = site::section_ctx(site.sections(lang), site.pages);
+            (lang, minijinja::Value::from_serialize(&ctx))
+        })
+        .collect();
+
     let mut out = BuildOutput {
         pages: pages.len(),
         ..BuildOutput::default()
@@ -196,6 +211,10 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             &cfg,
             &templates,
             &md,
+            sections_by_lang
+                .get(page.language.as_str())
+                .cloned()
+                .expect("언어별 섹션 컨텍스트는 모든 페이지 언어에 대해 만들었다"),
             highlight_css_url.as_deref(),
             feeds
                 .contains_key(&page.language)
@@ -238,8 +257,14 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
         let html = render_standalone(
             emit::NOT_FOUND_PATH,
             &cfg,
-            &site,
             &templates,
+            // 기본 언어에 페이지가 하나도 없으면 섹션도 없다 — 빈 목록이 옳다.
+            sections_by_lang
+                .get(cfg.default_language.as_str())
+                .cloned()
+                .unwrap_or_else(
+                    || minijinja::Value::from_serialize(Vec::<site::SectionCtx>::new()),
+                ),
             highlight_css_url.as_deref(),
         )
         .map_err(Kind::Template.tag())?;
@@ -352,12 +377,15 @@ fn check_output_collisions(out: &BuildOutput) -> Result<()> {
 
 /// 페이지 HTML과 그 페이지의 검색 색인 행을 함께 낸다. 본문 평문은 렌더 과정에서
 /// 이미 나오므로, 색인을 위해 문서를 다시 파싱하지 않는다.
+// 렌더 루프 한 곳에서만 부르는 내부 함수라 인자를 묶는 구조체가 이름값을 못 한다.
+#[allow(clippy::too_many_arguments)]
 fn render_page(
     page: &Page,
     site: &Site,
     cfg: &Config,
     templates: &Templates,
     md: &markdown::Renderer,
+    sections: minijinja::Value,
     highlight_css: Option<&str>,
     feed_url: Option<&str>,
 ) -> Result<(String, search::Entry)> {
@@ -369,7 +397,7 @@ fn render_page(
         origin: cfg.origin().to_string(),
         base_path: cfg.base_path().to_string(),
         language: page.language.clone(),
-        sections: site::section_ctx(site.sections(&page.language), site.pages),
+        sections,
         feed: feed_url.map(str::to_string),
         highlight_css: highlight_css.map(str::to_string),
     };
@@ -448,8 +476,8 @@ fn render_page(
 fn render_standalone(
     name: &str,
     cfg: &Config,
-    site: &Site,
     templates: &Templates,
+    sections: minijinja::Value,
     highlight_css: Option<&str>,
 ) -> Result<String> {
     let language = cfg.default_language.clone();
@@ -461,7 +489,7 @@ fn render_standalone(
         origin: cfg.origin().to_string(),
         base_path: cfg.base_path().to_string(),
         language: language.clone(),
-        sections: site::section_ctx(site.sections(&language), site.pages),
+        sections,
         feed: None,
         highlight_css: highlight_css.map(str::to_string),
     };

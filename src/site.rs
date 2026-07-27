@@ -16,6 +16,12 @@ pub struct Site<'a> {
     trees: BTreeMap<String, Vec<Section>>,
     /// translation_key → (언어 코드 → 페이지 인덱스)
     translations: BTreeMap<String, BTreeMap<String, usize>>,
+    /// 페이지 URL → 소속 섹션 안에서의 순번 (정렬 후).
+    ///
+    /// `neighbours_of`가 페이지마다 섹션 목록을 URL 비교로 훑으면 평평한 대형
+    /// 섹션에서 O(k²)가 된다 — 한 번 만들어 두면 조회다. 키가 URL인 근거:
+    /// URL 충돌은 discover 단계의 하드 에러라 이 시점에 URL은 전역 유일하다.
+    pos_in_section: BTreeMap<String, usize>,
 }
 
 /// 내부 트리 노드. 페이지는 인덱스로 참조해 소유권 문제를 피한다.
@@ -51,16 +57,22 @@ impl<'a> Site<'a> {
             by_lang.entry(p.language.clone()).or_default().push(i);
         }
 
-        let trees = by_lang
+        let trees: BTreeMap<String, Vec<Section>> = by_lang
             .into_iter()
             .map(|(lang, idxs)| (lang, build_tree(pages, &idxs, cfg)))
             .collect();
+
+        let mut pos_in_section = BTreeMap::new();
+        for sections in trees.values() {
+            index_positions(sections, pages, &mut pos_in_section);
+        }
 
         Self {
             cfg,
             pages,
             trees,
             translations,
+            pos_in_section,
         }
     }
 
@@ -178,11 +190,7 @@ impl<'a> Site<'a> {
         let Some(section) = self.section_of(page) else {
             return (None, None);
         };
-        let at = section
-            .pages
-            .iter()
-            .position(|&i| self.pages[i].url == page.url);
-        let Some(at) = at else {
+        let Some(&at) = self.pos_in_section.get(&page.url) else {
             return (None, None);
         };
 
@@ -342,6 +350,16 @@ fn ensure_section<'s>(root: &'s mut Section, dirs: &[String]) -> &'s mut Section
         cur = &mut cur.subsections[pos];
     }
     cur
+}
+
+/// 정렬이 끝난 트리에서 페이지 URL → 섹션 내 순번을 한 번에 적는다.
+fn index_positions(sections: &[Section], pages: &[Page], out: &mut BTreeMap<String, usize>) {
+    for s in sections {
+        for (pos, &i) in s.pages.iter().enumerate() {
+            out.insert(pages[i].url.clone(), pos);
+        }
+        index_positions(&s.subsections, pages, out);
+    }
 }
 
 fn find_section<'s>(sections: &'s [Section], dirs: &[String]) -> Option<&'s Section> {

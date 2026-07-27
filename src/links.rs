@@ -9,7 +9,7 @@
 
 use comrak::options::URLRewriter;
 use std::collections::BTreeMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 pub const PREFIX: &str = "@/";
 
@@ -23,24 +23,28 @@ pub struct KnownUrls {
     pub urls: std::collections::BTreeSet<String>,
 }
 
+/// 표 두 개는 `Arc`다. 리졸버 자체는 페이지마다 새로 만들어야 하지만(`unresolved`가
+/// 페이지별 상태다), 표는 사이트 전체에서 같은 하나다. 값으로 들고 있던 시절에는
+/// 페이지마다 전 URL 집합이 통째로 복사돼 빌드 전체가 O(n²)였다 — 5000페이지
+/// 실측에서 hwaro보다 7배 느린 주범이 이 복사였다.
 pub struct Resolver {
-    index: LinkIndex,
+    index: Arc<LinkIndex>,
     language: String,
     default_language: String,
     /// 해석하지 못한 링크. 렌더가 끝난 뒤 빌드를 실패시키는 데 쓴다.
     unresolved: Mutex<Vec<String>>,
     /// 이 사이트가 내보내는 URL 전체. 비어 있으면 절대 경로 검사를 건너뛴다.
-    known: KnownUrls,
+    known: Arc<KnownUrls>,
 }
 
 impl Resolver {
-    pub fn new(index: LinkIndex, language: &str, default_language: &str) -> Self {
+    pub fn new(index: Arc<LinkIndex>, language: &str, default_language: &str) -> Self {
         Self {
             index,
             language: language.to_string(),
             default_language: default_language.to_string(),
             unresolved: Mutex::new(Vec::new()),
-            known: KnownUrls::default(),
+            known: Arc::default(),
         }
     }
 
@@ -49,7 +53,7 @@ impl Resolver {
     /// `@/`만 검사하면 "깨진 참조는 빌드를 멈춘다"가 반쪽이 된다. 사람이 가장
     /// 자연스럽게 쓰는 건 `[설치](/start/install/)`인데, 그건 지금까지 아무도
     /// 검사하지 않았고 프로덕션에서 404가 됐다.
-    pub fn with_known_urls(mut self, known: KnownUrls) -> Self {
+    pub fn with_known_urls(mut self, known: Arc<KnownUrls>) -> Self {
         self.known = known;
         self
     }
@@ -168,14 +172,14 @@ fn translation_key(path: &str) -> String {
 mod language_suffix_tests {
     use super::*;
 
-    fn index(pairs: &[(&str, &str)]) -> LinkIndex {
+    fn index(pairs: &[(&str, &str)]) -> Arc<LinkIndex> {
         let mut idx = LinkIndex::new();
         for (key, url) in pairs {
             idx.entry((*key).to_string())
                 .or_default()
                 .insert("en".to_string(), (*url).to_string());
         }
-        idx
+        Arc::new(idx)
     }
 
     /// 콘텐츠 쪽은 **선언된** 언어 코드만 떼고, 링크 쪽은 목록을 갖고 있지 않다.
@@ -217,12 +221,12 @@ mod absolute_link_tests {
     use std::collections::BTreeSet;
 
     fn resolver(urls: &[&str]) -> Resolver {
-        Resolver::new(LinkIndex::new(), "en", "en").with_known_urls(KnownUrls {
+        Resolver::new(Arc::default(), "en", "en").with_known_urls(Arc::new(KnownUrls {
             urls: urls
                 .iter()
                 .map(|s| (*s).to_string())
                 .collect::<BTreeSet<_>>(),
-        })
+        }))
     }
 
     /// `@/`만 검사하면 "깨진 참조는 빌드를 멈춘다"가 반쪽이다. 사람이 가장
@@ -257,7 +261,7 @@ mod absolute_link_tests {
     /// 반쯤 아는 상태로 판정하면 멀쩡한 링크를 죽었다고 말하게 된다.
     #[test]
     fn no_known_urls_means_no_checking() {
-        let r = Resolver::new(LinkIndex::new(), "en", "en");
+        let r = Resolver::new(Arc::default(), "en", "en");
         r.to_html("/anything/");
         assert!(r.take_unresolved().is_empty());
     }
@@ -267,7 +271,7 @@ mod absolute_link_tests {
 mod tests {
     use super::*;
 
-    fn index() -> LinkIndex {
+    fn index() -> Arc<LinkIndex> {
         let mut i = LinkIndex::new();
         i.insert(
             "start/installation".into(),
@@ -281,7 +285,7 @@ mod tests {
             "start/_index".into(),
             [("en".to_string(), "/start/".to_string())].into(),
         );
-        i
+        Arc::new(i)
     }
 
     #[test]

@@ -11,7 +11,7 @@ use comrak::options::Plugins;
 use comrak::{Anchorizer, Arena, Options, format_html_with_plugins, parse_document};
 use serde::Serialize;
 use std::fmt;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 /// 목차 항목. 템플릿에는 중첩된 형태로 나간다.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -36,9 +36,11 @@ pub struct Rendered {
 pub struct Renderer {
     cfg: MarkdownConfig,
     highlighter: Option<crate::highlight::Highlighter>,
-    links: Option<crate::links::LinkIndex>,
+    // 링크 표와 URL 집합은 `Arc`로 들고 페이지마다 포인터만 나눠 준다. 값으로 들면
+    // `render_in`이 페이지마다 O(n) 복사를 하게 되어 빌드 전체가 O(n²)가 된다.
+    links: Option<Arc<crate::links::LinkIndex>>,
     default_language: String,
-    known: crate::links::KnownUrls,
+    known: Arc<crate::links::KnownUrls>,
 }
 
 impl Renderer {
@@ -48,14 +50,14 @@ impl Renderer {
             highlighter: None,
             links: None,
             default_language: "en".into(),
-            known: crate::links::KnownUrls::default(),
+            known: Arc::default(),
         }
     }
 
     /// 루트 절대 경로 링크(`/start/install/`)와 이미지도 존재를 검사하게 한다.
     /// 비워 두면 검사하지 않는다.
     pub fn with_known_urls(mut self, known: crate::links::KnownUrls) -> Self {
-        self.known = known;
+        self.known = Arc::new(known);
         self
     }
 
@@ -67,7 +69,7 @@ impl Renderer {
 
     /// `@/path.md` 내부 링크 해석을 켠다.
     pub fn with_links(mut self, index: crate::links::LinkIndex, default_language: &str) -> Self {
-        self.links = Some(index);
+        self.links = Some(Arc::new(index));
         self.default_language = default_language.to_string();
         self
     }
@@ -105,10 +107,11 @@ impl Renderer {
         let headings = HeadingCollector::new(self.cfg.heading_anchors);
         let mut options = self.options();
 
+        // 리졸버는 페이지마다 새로(unresolved가 페이지별 상태), 표는 Arc 포인터 복사만.
         let resolver = self.links.as_ref().map(|index| {
-            std::sync::Arc::new(
-                crate::links::Resolver::new(index.clone(), language, &self.default_language)
-                    .with_known_urls(self.known.clone()),
+            Arc::new(
+                crate::links::Resolver::new(Arc::clone(index), language, &self.default_language)
+                    .with_known_urls(Arc::clone(&self.known)),
             )
         });
         if let Some(r) = &resolver {

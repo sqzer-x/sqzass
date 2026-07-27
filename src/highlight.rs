@@ -12,6 +12,7 @@ use comrak::adapters::SyntaxHighlighterAdapter;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::OnceLock;
 use syntect::highlighting::ThemeSet;
 use syntect::html::{ClassStyle, ClassedHTMLGenerator, css_for_theme_with_class_style};
 use syntect::parsing::SyntaxSet;
@@ -25,8 +26,15 @@ const CLASS_STYLE: ClassStyle = ClassStyle::SpacedPrefixed {
     prefix: CLASS_PREFIX,
 };
 
+/// 문법 덤프는 프로세스당 한 번만 역직렬화한다.
+///
+/// two-face의 bincode 덤프 역직렬화는 수십 ms급 고정비다. 단일 `build`에서는 어차피
+/// 한 번이지만, `serve`는 저장할 때마다 빌드를 새로 돌므로 이게 저장→반영 지연에
+/// 매번 얹혔다. 문법 집합은 콘텐츠와 무관하니 재사용해도 결정성에 영향이 없다.
+static SYNTAXES: OnceLock<SyntaxSet> = OnceLock::new();
+
 pub struct Highlighter {
-    syntaxes: SyntaxSet,
+    syntaxes: &'static SyntaxSet,
 }
 
 impl Highlighter {
@@ -34,7 +42,7 @@ impl Highlighter {
         // `extra_newlines` 여야 한다. ClassedHTMLGenerator는 줄 끝의 개행을 요구하고,
         // no-newlines 덤프와 섞으면 조용히 잘못된 결과가 나온다.
         Self {
-            syntaxes: two_face::syntax::extra_newlines(),
+            syntaxes: SYNTAXES.get_or_init(two_face::syntax::extra_newlines),
         }
     }
 }
@@ -62,7 +70,7 @@ impl SyntaxHighlighterAdapter for Highlighter {
             .unwrap_or_else(|| self.syntaxes.find_syntax_plain_text());
 
         let mut generator =
-            ClassedHTMLGenerator::new_with_class_style(syntax, &self.syntaxes, CLASS_STYLE);
+            ClassedHTMLGenerator::new_with_class_style(syntax, self.syntaxes, CLASS_STYLE);
         for line in LinesWithEndings::from(code) {
             // 강조에 실패해도 문서 빌드를 통째로 죽이지 않는다. 이 줄만 포기하고
             // 이스케이프된 원문을 내보낸다.
@@ -131,7 +139,10 @@ fn escape_attr(s: &str) -> String {
 /// 수동 토글용 `[data-theme="dark"]`에 한 번. 네이티브 CSS 중첩을 써서 생성된
 /// 규칙을 문자열로 파싱하지 않고 그대로 감싼다.
 pub fn stylesheet(cfg: &HighlightConfig) -> Result<String> {
-    let themes = ThemeSet::load_defaults();
+    // 테마 집합도 문법 덤프와 같은 이유로 프로세스당 한 번만 로드한다 —
+    // serve의 리빌드마다 이 함수가 다시 불린다.
+    static THEMES: OnceLock<ThemeSet> = OnceLock::new();
+    let themes = THEMES.get_or_init(ThemeSet::load_defaults);
 
     let get = |name: &str| -> Result<String> {
         let theme = themes.themes.get(name).with_context(|| {

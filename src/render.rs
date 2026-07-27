@@ -209,8 +209,14 @@ pub struct SiteCtx {
     pub base_path: String,
     /// 지금 렌더 중인 페이지의 언어.
     pub language: String,
-    /// 이 언어의 최상위 섹션들. 사이드바는 여기서 만든다.
-    pub sections: Vec<crate::site::SectionCtx>,
+    /// 이 언어의 최상위 섹션들, 언어당 한 번만 직렬화해 둔 minijinja 값.
+    /// 사이드바는 여기서 만든다.
+    ///
+    /// `Vec<SectionCtx>`가 아닌 이유: 값 그대로 두면 minijinja가 **페이지마다**
+    /// 전 섹션·전 페이지 트리를 다시 직렬화한다 — 페이지당 O(n), 빌드 전체 O(n²).
+    /// minijinja는 `Value`를 직렬화 경계 너머로 그대로 통과시키므로, 미리 만든
+    /// 값을 참조 카운트 복사로 나눠 주면 그 비용이 사라진다.
+    pub sections: minijinja::Value,
     /// 이 언어의 Atom 피드 URL. 날짜 있는 페이지가 하나도 없으면 `None`이고,
     /// 그때 템플릿은 자동 발견 링크를 넣지 않으면 된다.
     pub feed: Option<String>,
