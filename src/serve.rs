@@ -107,7 +107,7 @@ pub async fn serve(opts: ServeOptions) -> Result<()> {
 
 /// 감시 대상 디렉터리. 출력 디렉터리는 넣지 않는다 — 자기가 쓴 걸 보고 다시 빌드하는
 /// 무한 루프가 된다.
-const WATCH_DIRS: &[&str] = &["content", "templates", "static", "i18n", "data"];
+const WATCH_DIRS: &[&str] = &["content", "templates", "static", "i18n"];
 
 fn spawn_watcher(
     root: &Path,
