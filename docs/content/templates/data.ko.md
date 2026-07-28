@@ -13,7 +13,8 @@ toc = true
 |---|---|
 | `site.title` | `sqzass.toml`에서. |
 | `site.description` | `sqzass.toml`에서. |
-| `site.base_url` | 끝의 슬래시를 뗀 값이라 `{{ site.base_url }}{{ page.url }}`이 항상 맞습니다. |
+| `site.origin` | 스킴과 호스트만. 페이지 URL이 서브경로를 이미 품고 있어서 `{{ site.origin }}{{ page.url }}`이 절대 URL입니다. |
+| `site.base_path` | 서브경로 아래 사이트일 때의 경로 접두사, 루트면 빈 값. 템플릿이 직접 쓰는 URL에만 필요합니다. |
 | `site.language` | 지금 렌더 중인 페이지의 언어. |
 | `site.sections` | **이 언어의** 최상위 섹션들. |
 | `site.highlight_css` | 생성된 하이라이트 스타일시트 URL. 강조가 꺼져 있으면 없습니다. |
@@ -31,7 +32,7 @@ toc = true
 | `page.title` | |
 | `page.description` | |
 | `page.url` | `/ko/start/installation/` |
-| `page.permalink` | `base_url` + `url`. |
+| `page.permalink` | 절대 URL — `origin` + `url`. |
 | `page.content` | 렌더된 HTML. **`\| safe`가 필요합니다.** |
 | `page.weight`, `page.draft`, `page.language` | front matter 그대로. |
 | `page.toc` | 저자가 목차를 원했는지. |

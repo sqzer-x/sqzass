@@ -13,7 +13,8 @@ Two objects are in scope on every page: `site` and `page`.
 |---|---|
 | `site.title` | From `sqzass.toml`. |
 | `site.description` | From `sqzass.toml`. |
-| `site.base_url` | Trailing slash removed, so `{{ site.base_url }}{{ page.url }}` is always right. |
+| `site.origin` | Scheme and host only. `{{ site.origin }}{{ page.url }}` is an absolute URL — page URLs already carry the subpath. |
+| `site.base_path` | The path prefix when the site lives under one, else empty. Only for URLs a template writes by hand. |
 | `site.language` | The language of the page being rendered. |
 | `site.sections` | Top-level sections **in this language**. |
 | `site.highlight_css` | URL of the generated highlight stylesheet, or nothing if highlighting is off. |
@@ -32,7 +33,7 @@ and `weight`.
 | `page.title` | |
 | `page.description` | |
 | `page.url` | `/ko/start/installation/` |
-| `page.permalink` | `base_url` + `url`. |
+| `page.permalink` | The absolute URL — `origin` + `url`. |
 | `page.content` | Rendered HTML. **Needs `\| safe`.** |
 | `page.weight`, `page.draft`, `page.language` | Front matter, as given. |
 | `page.toc` | Whether the author asked for a contents list. |
