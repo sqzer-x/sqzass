@@ -142,6 +142,7 @@ fn spawn_watcher(
             let Ok(events) = res else { continue };
             let paths: Vec<PathBuf> = events
                 .iter()
+                .filter(|e| is_change(&e.kind))
                 .flat_map(|e| e.paths.clone())
                 .filter(|p| !is_noise(p))
                 .collect();
@@ -153,6 +154,13 @@ fn spawn_watcher(
     });
 
     Ok(debouncer)
+}
+
+/// 파일을 *바꾼* 이벤트만 리빌드 사유다. inotify의 감시 마스크에는 IN_OPEN이
+/// 들어 있어서 읽기도 이벤트를 만든다 — 이걸 안 거르면 리빌드가 content/를
+/// 읽는 것 자체가 다음 리빌드를 예약해, 첫 저장 이후 영원히 도는 루프가 된다.
+fn is_change(kind: &notify::EventKind) -> bool {
+    !matches!(kind, notify::EventKind::Access(_))
 }
 
 /// 편집기 임시 파일과 VCS 내부 파일은 무시한다. 이걸 안 걸러내면 저장 한 번에
@@ -461,6 +469,22 @@ mod tests {
     fn passes_through_files_with_extensions() {
         assert_eq!(resolve_key("/assets/highlight.css"), "assets/highlight.css");
         assert_eq!(resolve_key("/.nojekyll"), ".nojekyll");
+    }
+
+    #[test]
+    fn reads_do_not_count_as_changes() {
+        // 리빌드 자신이 content/를 읽으며 내는 Access(Open)이 리빌드 사유가
+        // 되면 첫 저장 이후 영원히 도는 루프다. 변경 부류는 전부 통과해야 한다.
+        use notify::EventKind;
+        use notify::event::{AccessKind, CreateKind, ModifyKind, RemoveKind};
+        assert!(!is_change(&EventKind::Access(AccessKind::Open(
+            notify::event::AccessMode::Any
+        ))));
+        assert!(!is_change(&EventKind::Access(AccessKind::Any)));
+        assert!(is_change(&EventKind::Modify(ModifyKind::Any)));
+        assert!(is_change(&EventKind::Create(CreateKind::Any)));
+        assert!(is_change(&EventKind::Remove(RemoveKind::Any)));
+        assert!(is_change(&EventKind::Any));
     }
 
     #[test]
