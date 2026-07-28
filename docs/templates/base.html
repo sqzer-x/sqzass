@@ -78,12 +78,14 @@
   {#- 크롬은 전부 같은 컨트롤이다. 하나만 텍스트 링크로 두면 그 하나가 고장난
       것처럼 보인다. #}
   <div class="tools">
+    {%- if site.search %}
     <button id="search-trigger" class="chip search-trigger" type="button"
-            data-index="{{ site.base_path }}/search-{{ page.language }}.json">
+            data-index="{{ site.search }}">
       <span>{{ t("search") }}</span>
       {#- 라벨은 search.js가 읽는 사람의 수정자 키로 바꿔 쓴다. 이건 JS가 없을 때 값. #}
       <kbd>Ctrl /</kbd>
     </button>
+    {%- endif %}
     {%- for lang in page.translations %}
     <a class="chip" href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
     {%- endfor %}
@@ -184,7 +186,9 @@
         <li><a href="{{ site.base_path }}/sitemap.xml">sitemap.xml</a></li>
         <li><a href="{{ site.base_path }}/robots.txt">robots.txt</a></li>
         <li><a href="{{ site.base_path }}/llms.txt">llms.txt</a></li>
-        <li><a href="{{ site.base_path }}/search-{{ page.language }}.json">{{ t("footer_search_index") }}</a></li>
+        {%- if site.search %}
+        <li><a href="{{ site.search }}">{{ t("footer_search_index") }}</a></li>
+        {%- endif %}
       </ul>
     </div>
   </div>
@@ -192,6 +196,7 @@
   <p class="colophon-note">{{ t("built_with") }}</p>
 </footer>
 
+{%- if site.search %}
 <dialog id="search-dialog" class="search-dialog" aria-label="{{ t("search_the_docs") }}">
   <div class="search-panel">
     <input type="search" autocomplete="off" spellcheck="false" aria-label="{{ t("search_the_docs") }}">
@@ -202,6 +207,7 @@
     </div>
   </div>
 </dialog>
+{%- endif %}
 
 <script>
 document.querySelector(".theme-toggle").addEventListener("click", function () {
@@ -211,7 +217,9 @@ document.querySelector(".theme-toggle").addEventListener("click", function () {
   try { localStorage.setItem("theme", next); } catch (e) {}
 });
 </script>
+{%- if site.search %}
 <script src="{{ asset("js/search.js") }}" defer></script>
+{%- endif %}
 <script src="{{ asset("js/ui.js") }}" defer
         data-copy="{{ t("copy") }}" data-copied="{{ t("copied") }}"></script>
 </body>

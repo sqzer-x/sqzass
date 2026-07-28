@@ -17,6 +17,7 @@ toc = true
 | `site.language` | 지금 렌더 중인 페이지의 언어. |
 | `site.sections` | **이 언어의** 최상위 섹션들. |
 | `site.highlight_css` | 생성된 하이라이트 스타일시트 URL. 강조가 꺼져 있으면 없습니다. |
+| `site.search` | 이 언어의 검색 색인 URL. `[search] enabled = false`면 없습니다. |
 
 `site.sections`에는 현재 언어의 트리만 담깁니다. 내비게이션이 안전한 이유가
 이것입니다. 번역되지 않은 페이지는 여기 없으므로 그 링크를 그릴 수가 없습니다.

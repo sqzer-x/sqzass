@@ -220,6 +220,11 @@ pub struct SiteCtx {
     /// 이 언어의 Atom 피드 URL. 날짜 있는 페이지가 하나도 없으면 `None`이고,
     /// 그때 템플릿은 자동 발견 링크를 넣지 않으면 된다.
     pub feed: Option<String>,
+    /// 이 언어의 검색 색인 URL. `[search] enabled = false`면 `None`이고,
+    /// 그때 템플릿은 검색 UI를 넣지 않으면 된다 — `feed`와 같은 규칙이다.
+    /// URL 조립을 템플릿에 맡기지 않는 이유이기도 하다: 색인 파일명은 엔진
+    /// 지식이라, 템플릿이 손으로 만들면 끈 사이트에서 죽은 URL이 된다.
+    pub search: Option<String>,
     /// 생성된 하이라이트 스타일시트 URL. 강조가 꺼져 있으면 `None`.
     pub highlight_css: Option<String>,
 }

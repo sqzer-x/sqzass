@@ -61,6 +61,20 @@ enabled = false
 
 skips the index entirely.
 
+Templates see the same switch as `site.search` — the current language's index
+URL, or nothing:
+
+```html
+{% if site.search %}
+<button id="search-trigger" data-index="{{ site.search }}">…</button>
+{% endif %}
+```
+
+The same rule as `site.feed`: the `if` is not defensive, it is how a theme
+works on sites that turned search off. This site's search button, the palette
+and the footer link all sit behind it — and the URL comes from the build, not
+from the template gluing `search-` to a language code.
+
 ## Ranking
 
 Every term in the query must appear somewhere in a row — an AND, not an OR.

@@ -445,6 +445,10 @@ fn render_page(
         language: page.language.clone(),
         sections,
         feed: feed_url.map(str::to_string),
+        search: cfg
+            .search
+            .enabled
+            .then(|| format!("{}/{}", cfg.base_path(), search::path(&page.language))),
         highlight_css: highlight_css.map(str::to_string),
     };
 
@@ -544,6 +548,11 @@ fn render_standalone(
         language: language.clone(),
         sections,
         feed: None,
+        // 404에도 검색은 준다 — 길 잃은 독자가 빠져나가는 길이다.
+        search: cfg
+            .search
+            .enabled
+            .then(|| format!("{}/{}", cfg.base_path(), search::path(&language))),
         highlight_css: highlight_css.map(str::to_string),
     };
 
@@ -688,6 +697,28 @@ mod search_toggle_tests {
             .collect();
         assert!(leaked.is_empty(), "색인이 나왔다: {leaked:?}");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn templates_see_the_index_url_or_nothing() {
+        // `site.search`는 `site.feed`와 같은 규칙이다 — 켜져 있으면 이 언어의
+        // 색인 URL, 꺼져 있으면 없음. 테마가 두 경우 모두에서 동작하는 근거다.
+        let tpl = "{% if site.search %}INDEX={{ site.search }}{% else %}NO-SEARCH{% endif %}";
+
+        let on = site_with("", "ctx-on");
+        std::fs::write(on.join("templates/page.html"), tpl).unwrap();
+        let html = build_to_memory(&opts(&on)).unwrap().files["index.html"].clone();
+        let html = String::from_utf8(html).unwrap();
+        assert!(html.contains("INDEX=/search-en.json"), "실제: {html}");
+
+        let off = site_with("\n[search]\nenabled = false\n", "ctx-off");
+        std::fs::write(off.join("templates/page.html"), tpl).unwrap();
+        let html = build_to_memory(&opts(&off)).unwrap().files["index.html"].clone();
+        let html = String::from_utf8(html).unwrap();
+        assert!(html.contains("NO-SEARCH"), "실제: {html}");
+
+        let _ = std::fs::remove_dir_all(&on);
+        let _ = std::fs::remove_dir_all(&off);
     }
 
     #[test]

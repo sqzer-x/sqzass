@@ -17,6 +17,7 @@ Two objects are in scope on every page: `site` and `page`.
 | `site.language` | The language of the page being rendered. |
 | `site.sections` | Top-level sections **in this language**. |
 | `site.highlight_css` | URL of the generated highlight stylesheet, or nothing if highlighting is off. |
+| `site.search` | URL of this language's search index, or nothing with `[search] enabled = false`. |
 
 `site.sections` contains only the current language's tree, which is what makes
 navigation safe: an untranslated page is not in it, so a link to it cannot be
