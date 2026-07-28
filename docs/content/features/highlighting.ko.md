@@ -52,25 +52,83 @@ syntect 기본 세트의 테마 이름이면 무엇이든 됩니다. 없는 이�
 `string` 같은 이름을 내보내는데, 프로그래밍을 다루는 사이트에서 당신의 스타일시트와
 부딪히기 딱 좋은 일반적인 단어들입니다.
 
+## 줄 표시와 파일명
+
+옵션은 언어 뒤에, 공백으로 구분해, `key=value`로 적습니다.
+
+````markdown
+```rust hl_lines=2-3 name=src/main.rs
+fn main() {
+    let marked = 2;
+    let also_marked = 3;
+}
+```
+````
+
+이 사이트의 스타일시트로 렌더하면 이렇게 됩니다.
+
+```rust hl_lines=2-3 name=src/main.rs
+fn main() {
+    let marked = 2;
+    let also_marked = 3;
+}
+```
+
+`hl_lines`는 1부터 세는 줄 번호와 닫힌 구간을 쉼표로 나열합니다:
+`hl_lines=2-4,7`. 지목된 줄은 `<mark class="hl-line">`로 감싸집니다.
+`<mark>`는 브라우저가 기본으로 칠해 주므로 CSS가 하나도 없어도 표시가 보이고,
+사이트는 `.highlight mark`로 다시 꾸미면 됩니다. 강조는 줄 경계를 건너 이어집니다.
+여러 줄 주석의 가운데 줄만 표시해도 그 줄은 여전히 주석입니다.
+
+`name`은 블록에 파일명을 답니다. 마크업이 아니라 속성으로 나가므로 —
+`<code … data-name="src/main.rs">` — 보여줄지는 당신의 CSS가 정합니다.
+
+```css
+.prose pre code { display: block; width: max-content; min-width: 100%; }
+.prose pre code[data-name]::before {
+  content: attr(data-name);
+  display: block;
+}
+```
+
+첫 규칙은 `code`를 가장 긴 줄까지 넓힙니다. 블록이 옆으로 스크롤될 때 라벨과
+`hl_lines` 표시가 보이는 폭에서 끊기지 않고 줄 끝까지 닿는 것은 이 규칙
+덕입니다.
+
+Zola식 `rust,hl_lines=2-4`가 아닌 이유: 쉼표는 옵션을 언어 토큰에 붙여 버려서
+문법 조회가 실패하고 `class="language-…"`가 오염됩니다. 첫 공백 뒤는 자유롭고,
+comrak 자신이 정확히 거기서 정보 문자열을 가릅니다.
+
+오타는 조용한 무시가 아니라 빌드 에러입니다. `hl_line=3`도, `linenos=true`도,
+세 줄짜리 블록의 `hl_lines=9`도, 두 번 적은 키도 전부 파일명과 함께 빌드를
+멈춥니다 — 그 반대는 멀쩡해 보이는 채로 강조가 빠진 페이지가 배포되는
+것입니다. 언어 없이 옵션부터 시작한 펜스도 마찬가지입니다. 언어 이름에 `=`가
+들어가는 일은 없으므로, `` ```hl_lines=2 ``는 모르는 언어가 아니라 언어 자리에
+온 옵션입니다. 옵션은 하이라이터의 일부이므로 `enabled = false`면 적용도 검사도
+되지 않습니다.
+
 ## 줄 번호와 복사 버튼은 당신 몫입니다
 
 둘 다 설정 키가 아니고, `line_numbers`는 아무 일도 안 하는 채로 남기느니 **삭제**했습니다.
 아무것도 하지 않는 설정은 없는 것보다 나쁩니다. 누군가 그걸 켜 놓고 기다리게 되니까요.
 
-줄 번호는 하이라이터가 이미 내보내는 줄에 CSS 카운터를 얹는 것입니다.
+보통의 블록에는 CSS 카운터를 얹을 줄 단위 마크업이 없습니다 — 모든 블록의 모든
+줄에 래퍼를 감으면, 대부분의 블록이 안 쓰는 기능의 값을 모든 페이지가 치르게
+됩니다. 줄 번호 거터는 줄 수를 세는 JS 몇 줄입니다.
+
+```js
+document.querySelectorAll(".prose pre > code").forEach(function (code) {
+  var lines = code.textContent.split("\n").length - 1;
+  var gutter = document.createElement("span");
+  gutter.className = "linenos";
+  for (var i = 1; i <= lines; i++) gutter.textContent += i + "\n";
+  code.parentElement.prepend(gutter);
+});
+```
 
 ```css
-.prose pre code { counter-reset: line; }
-.prose pre code > .line::before {
-  counter-increment: line;
-  content: counter(line);
-  display: inline-block;
-  width: 2.5em;
-  text-align: right;
-  margin-right: 1em;
-  color: var(--ink-3);
-  user-select: none;   /* 블록을 복사할 때 번호까지 딸려가지 않게 */
-}
+.prose pre { display: flex; gap: 1em; }
+.prose pre .linenos { text-align: right; color: var(--ink-3); user-select: none; }
 ```
 
 복사 버튼은 열 줄 남짓이고, 언어는 이미 엘리먼트에 붙어 있습니다.

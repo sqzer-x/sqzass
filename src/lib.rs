@@ -415,6 +415,13 @@ fn render_page(
             rendered.unresolved.join("\n  ")
         )));
     }
+    if !rendered.bad_fences.is_empty() {
+        return Err(Kind::Content.tag()(anyhow::anyhow!(
+            "{}: 잘못된 코드 펜스 옵션이 있습니다:\n  {}",
+            page.source.display(),
+            rendered.bad_fences.join("\n  ")
+        )));
+    }
 
     // 섹션 인덱스는 자기 자신이 섹션이라 라벨과 제목이 겹친다. 그때는 비워 둔다.
     let section = if page.is_section {

@@ -31,6 +31,9 @@ pub struct Rendered {
     /// 해석하지 못한 `@/` 링크. 비어 있지 않으면 빌드를 멈춰야 한다 —
     /// 깨진 링크를 조용히 배포하는 건 이 도구가 막겠다고 한 바로 그 부류다.
     pub unresolved: Vec<String>,
+    /// 잘못된 코드 펜스 옵션. 링크와 같은 계약이다 — 모르는 키·틀린 범위를
+    /// 조용히 무시하면 오타가 강조 없는 채로 배포된다.
+    pub bad_fences: Vec<String>,
 }
 
 pub struct Renderer {
@@ -92,6 +95,10 @@ impl Renderer {
         o.render.r#unsafe = true;
         // false여야 `<code class="language-rust">`가 나온다. true면 `<pre lang="rust">`다.
         o.render.github_pre_lang = false;
+        // 펜스 정보 문자열의 언어 뒤쪽(hl_lines 등)을 어댑터가 data-meta로 받게 한다.
+        // 하이라이터가 있을 때만 — 강조를 끈 사이트에서는 검증 없는 메타가 출력에
+        // 그대로 새므로, 펜스 옵션 자체를 강조 기능의 일부로 묶는다.
+        o.render.full_info_string = self.highlighter.is_some();
         o
     }
 
@@ -141,9 +148,15 @@ impl Renderer {
             .as_ref()
             .map(|r| r.take_unresolved())
             .unwrap_or_default();
+        let bad_fences = self
+            .highlighter
+            .as_ref()
+            .map(|h| h.take_errors())
+            .unwrap_or_default();
 
         Rendered {
             unresolved,
+            bad_fences,
             html,
             text,
             toc: headings.into_toc(),

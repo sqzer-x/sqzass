@@ -557,10 +557,42 @@ h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
   .prose pre.highlight .copy { opacity: 1; }
 }
 .prose pre.highlight code {
+  /* 블록으로 넓혀 두는 이유: hl-line 표시와 data-name 라벨이 이 박스의 폭을
+     물려받는다. auto 폭이면 스크롤되는 블록에서 보이는 폭까지만 칠해져서,
+     옆으로 넘긴 순간 강조가 사라진 채로 줄의 나머지가 보인다. */
+  display: block;
+  width: max-content;
+  min-width: 100%;
   background: none;
   padding: 0;
   border-radius: 0;
   font-size: inherit;
+}
+
+/* 펜스 옵션 `hl_lines=`가 감싼 줄. <mark>의 브라우저 기본(노란 배경, 검은 글자)은
+   두 테마 어느 쪽과도 안 맞으므로 악센트 기운의 면으로 바꾼다. 음수 마진으로
+   pre의 좌우 패딩까지 칠해 "줄 전체"가 표시된 것으로 읽히게 한다. */
+.prose pre.highlight mark.hl-line {
+  display: block;
+  margin: 0 -1.1rem;
+  padding: 0 1.1rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: inherit;
+}
+
+/* 펜스 옵션 `name=`. 빌드는 data-name 속성만 내보내고 보여주는 건 사이트 몫이다 —
+   여기가 그 몫을 하는 자리. */
+.prose pre.highlight code[data-name]::before {
+  content: attr(data-name);
+  display: block;
+  margin: -0.9rem -1.1rem 0.9rem;
+  padding: 0.4rem 1.1rem;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 /* ---------- tables ---------- */
