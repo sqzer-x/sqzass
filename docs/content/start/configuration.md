@@ -108,6 +108,17 @@ See [Static assets](@/templates/assets.md).
 |---|---|---|
 | `sort_by` | `"weight"` | `weight`, `title` or `date`. A section can override it. |
 
+## `[search]`
+
+| Key | Default | |
+|---|---|---|
+| `enabled` | `true` | Emit `search-<lang>.json`, one per language. |
+
+The index carries the body text of every page, so it grows with your content —
+a site with no search UI has no reason to pay for it. Disabled, no index is
+written and no index URL exists for links to point at. See
+[Search](@/features/search.md).
+
 ## Overriding from the command line
 
 `--base-url` and `--drafts` win over the file, which is what makes one

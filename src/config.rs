@@ -31,6 +31,8 @@ pub struct Config {
     pub assets: Assets,
     #[serde(default)]
     pub nav: Nav,
+    #[serde(default)]
+    pub search: Search,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -127,6 +129,23 @@ impl Default for Assets {
             source_dir: "static".into(),
             fingerprint: true,
         }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Search {
+    /// 검색 색인(`search-<언어>.json`) 생성 여부.
+    ///
+    /// 색인은 전 페이지의 본문 평문을 담으므로 코퍼스 크기에 비례한다(이 문서
+    /// 사이트에서 언어당 ~80KB, 5000페이지 실측에서 16MB). 검색 UI가 없는
+    /// 사이트가 그 바이트를 강제로 지불할 이유가 없다.
+    pub enabled: bool,
+}
+
+impl Default for Search {
+    fn default() -> Self {
+        Self { enabled: true }
     }
 }
 

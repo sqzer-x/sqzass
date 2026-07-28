@@ -192,14 +192,19 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             // 설정의 [languages]가 아니라 **실제 페이지의 언어**로 만든다.
             // 언어를 선언하지 않은 사이트도 기본 언어로 색인을 내보내므로,
             // 설정을 기준으로 삼으면 그 사이트에서 색인 링크가 죽는다.
-            .chain(
+            // 색인을 끈 사이트에서는 넣지 않는다 — 존재하지 않는 파일을 알려진
+            // URL로 등록하면 죽은 링크를 살아 있다고 판정하게 된다.
+            .chain(if cfg.search.enabled {
                 pages
                     .iter()
                     .map(|p| p.language.as_str())
                     .collect::<std::collections::BTreeSet<_>>()
                     .into_iter()
-                    .map(|lang| format!("{base}/{}", search::path(lang))),
-            )
+                    .map(|lang| format!("{base}/{}", search::path(lang)))
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
+            })
             .collect(),
     };
     md = md.with_known_urls(known);
@@ -256,14 +261,18 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             page.out_path.to_string_lossy().replace('\\', "/"),
             html.into_bytes(),
         );
-        index.entry(page.language.clone()).or_default().push(entry);
+        if let Some(entry) = entry {
+            index.entry(page.language.clone()).or_default().push(entry);
+        }
     }
     prof.lap("render");
 
     for (language, entries) in index {
         let json = serde_json::to_vec(&entries)
             .with_context(|| format!("{language} 검색 색인을 만들 수 없습니다"))?;
-        out.files.insert(search::path(&language), json);
+        // `static/`에 같은 이름이 있으면 그쪽이 이긴다. 피드·sitemap·robots과
+        // 같은 규칙이다 — 직접 넣은 색인이 조용히 덮이는 건 어느 쪽이든 나쁘다.
+        out.files.entry(search::path(&language)).or_insert(json);
     }
     prof.lap("search");
 
@@ -412,7 +421,8 @@ fn check_output_collisions(out: &BuildOutput) -> Result<()> {
 }
 
 /// 페이지 HTML과 그 페이지의 검색 색인 행을 함께 낸다. 본문 평문은 렌더 과정에서
-/// 이미 나오므로, 색인을 위해 문서를 다시 파싱하지 않는다.
+/// 이미 나오므로, 색인을 위해 문서를 다시 파싱하지 않는다. 색인을 끈 사이트에는
+/// 행을 만들지 않는다 — 페이지당 본문 사본 하나가 통째로 사라진다.
 // 렌더 루프 한 곳에서만 부르는 내부 함수라 인자를 묶는 구조체가 이름값을 못 한다.
 #[allow(clippy::too_many_arguments)]
 fn render_page(
@@ -424,7 +434,7 @@ fn render_page(
     sections: minijinja::Value,
     highlight_css: Option<&str>,
     feed_url: Option<&str>,
-) -> Result<(String, search::Entry)> {
+) -> Result<(String, Option<search::Entry>)> {
     let template = select_template(page, site, templates).map_err(Kind::Template.tag())?;
 
     let site_ctx = SiteCtx {
@@ -468,7 +478,7 @@ fn render_page(
 
     let (prev, next) = site.neighbours_of(page);
 
-    let entry = search::Entry {
+    let entry = cfg.search.enabled.then(|| search::Entry {
         t: page.title.clone(),
         d: page.front.description.clone(),
         u: page.url.clone(),
@@ -477,7 +487,7 @@ fn render_page(
             .map(|s| s.title.clone())
             .unwrap_or_default(),
         c: rendered.text.clone(),
-    };
+    });
 
     let page_ctx = PageCtx {
         title: page.title.clone(),
@@ -627,4 +637,70 @@ pub fn display_path(path: &Path) -> String {
         .unwrap_or_else(|| path.to_path_buf())
         .display()
         .to_string()
+}
+
+#[cfg(test)]
+mod search_toggle_tests {
+    use super::*;
+
+    /// init 뼈대에 설정을 덧붙인 임시 사이트. 반환된 경로는 테스트가 지운다.
+    fn site_with(extra_config: &str, name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("sqzass-search-{}-{name}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        init::init(&dir).unwrap();
+        let cfg_path = dir.join(config::CONFIG_FILE);
+        let mut cfg = std::fs::read_to_string(&cfg_path).unwrap();
+        cfg.push_str(extra_config);
+        std::fs::write(&cfg_path, cfg).unwrap();
+        dir
+    }
+
+    fn opts(dir: &Path) -> BuildOptions {
+        BuildOptions {
+            input: dir.to_path_buf(),
+            output: None,
+            drafts: false,
+            base_url: None,
+            profile: false,
+        }
+    }
+
+    #[test]
+    fn search_index_is_generated_by_default() {
+        let dir = site_with("", "on");
+        let out = build_to_memory(&opts(&dir)).unwrap();
+        assert!(
+            out.files.contains_key(&search::path("en")),
+            "실제 파일들: {:?}",
+            out.files.keys().collect::<Vec<_>>()
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn disabled_search_emits_no_index_at_all() {
+        let dir = site_with("\n[search]\nenabled = false\n", "off");
+        let out = build_to_memory(&opts(&dir)).unwrap();
+        let leaked: Vec<_> = out
+            .files
+            .keys()
+            .filter(|k| k.starts_with("search-"))
+            .collect();
+        assert!(leaked.is_empty(), "색인이 나왔다: {leaked:?}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_static_search_index_wins_over_the_generated_one() {
+        let dir = site_with("", "static-wins");
+        std::fs::create_dir_all(dir.join("static")).unwrap();
+        std::fs::write(dir.join("static/search-en.json"), b"{\"handmade\":true}").unwrap();
+        let out = build_to_memory(&opts(&dir)).unwrap();
+        assert_eq!(
+            out.files.get(&search::path("en")).map(Vec::as_slice),
+            Some(b"{\"handmade\":true}".as_slice()),
+            "생성 색인이 static/ 파일을 덮었다"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

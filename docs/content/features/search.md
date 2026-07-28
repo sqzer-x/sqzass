@@ -52,6 +52,15 @@ with your documentation, and there is a size past which this is the wrong
 design — but that size is far beyond a documentation site, and reaching it is a
 better problem than shipping search that cannot find your own words.
 
+A site that ships no search UI should not pay even that:
+
+```toml
+[search]
+enabled = false
+```
+
+skips the index entirely.
+
 ## Ranking
 
 Every term in the query must appear somewhere in a row — an AND, not an OR.
