@@ -70,6 +70,7 @@ pub async fn serve(opts: ServeOptions) -> Result<()> {
         output: None,
         drafts: opts.drafts,
         base_url: opts.base_url.clone(),
+        profile: false,
     };
 
     let initial = build_to_memory(&build_opts)

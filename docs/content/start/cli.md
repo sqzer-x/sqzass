@@ -7,7 +7,7 @@ toc = true
 
 ```
 sqzass init  [DIR]
-sqzass build [-i DIR] [-o DIR] [--drafts] [--base-url URL]
+sqzass build [-i DIR] [-o DIR] [--drafts] [--base-url URL] [--profile]
 sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
 sqzass doctor [-i DIR] [--fail-on note|warn] [--drafts]
 ```
@@ -28,9 +28,21 @@ run where a `sqzass.toml` already exists. See
 | `-o`, `--output` | `<input>/public` | Resolved against your shell's directory, not the site root. |
 | `--drafts` | | Include pages marked `draft = true`. |
 | `--base-url` | from config | Useful for preview deployments. |
+| `--profile` | | Per-phase timings on stderr; stdout stays as is. |
 
 The output directory is emptied first, so a page you deleted does not linger as
 a ghost in the built site.
+
+`--profile` prints one line per phase — discover, assets, feeds, templates,
+render, search, generate, write — which is how you learn whether a slow build
+is your content or this tool:
+
+```
+ discover  750.8µs
+   assets  1.4ms
+   render  198.9ms
+    write  1.3ms
+```
 
 ## serve
 

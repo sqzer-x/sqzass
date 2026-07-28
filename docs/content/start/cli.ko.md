@@ -7,7 +7,7 @@ toc = true
 
 ```
 sqzass init  [DIR]
-sqzass build [-i DIR] [-o DIR] [--drafts] [--base-url URL]
+sqzass build [-i DIR] [-o DIR] [--drafts] [--base-url URL] [--profile]
 sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
 sqzass doctor [-i DIR] [--fail-on note|warn] [--drafts]
 ```
@@ -28,9 +28,21 @@ sqzass doctor [-i DIR] [--fail-on note|warn] [--drafts]
 | `-o`, `--output` | `<input>/public` | 사이트 루트가 아니라 **셸의 현재 디렉터리** 기준으로 해석합니다. |
 | `--drafts` | | `draft = true`인 페이지도 포함합니다. |
 | `--base-url` | 설정값 | 프리뷰 배포에 씁니다. |
+| `--profile` | | 페이즈별 소요 시간을 stderr로 냅니다. stdout은 그대로입니다. |
 
 출력 디렉터리는 매번 비우고 시작합니다. 지운 페이지가 빌드된 사이트에 유령으로
 남지 않습니다.
+
+`--profile`은 페이즈마다 한 줄씩 찍습니다 — discover, assets, feeds, templates,
+render, search, generate, write. 느린 빌드의 원인이 콘텐츠인지 이 도구인지를
+여기서 알 수 있습니다.
+
+```
+ discover  750.8µs
+   assets  1.4ms
+   render  198.9ms
+    write  1.3ms
+```
 
 ## serve
 

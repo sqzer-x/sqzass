@@ -39,6 +39,32 @@ pub struct BuildOptions {
     pub drafts: bool,
     /// 설정의 `base_url`을 덮어쓴다.
     pub base_url: Option<String>,
+    /// 페이즈별 소요 시간을 stderr로 낸다 (`build --profile`).
+    pub profile: bool,
+}
+
+/// `--profile`의 페이즈 시계. stderr로만 말한다 — stdout의 "N pages → …" 계약과
+/// 빌드 산출물은 건드리지 않으므로 결정성과 무관하다.
+struct Profiler {
+    enabled: bool,
+    last: std::time::Instant,
+}
+
+impl Profiler {
+    fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            last: std::time::Instant::now(),
+        }
+    }
+
+    /// 직전 구간의 경과를 찍고 시계를 되돌린다.
+    fn lap(&mut self, name: &str) {
+        if self.enabled {
+            eprintln!("{name:>9}  {:.1?}", self.last.elapsed());
+        }
+        self.last = std::time::Instant::now();
+    }
 }
 
 /// 생성된 하이라이트 스타일시트의 논리 경로. 다른 에셋과 같은 규칙으로 해시가 붙는다.
@@ -86,9 +112,11 @@ fn load_config(opts: &BuildOptions) -> Result<Config> {
 fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     let root = &opts.input;
     let drafts = opts.drafts || cfg.build.drafts;
+    let mut prof = Profiler::new(opts.profile);
 
     let pages = content::discover(root, &cfg, drafts).map_err(Kind::Content.tag())?;
     let site = Site::build(&pages, &cfg);
+    prof.lap("discover");
 
     // 에셋을 먼저 처리해야 템플릿이 해시가 붙은 최종 URL을 조회할 수 있다.
     let mut assets =
@@ -106,6 +134,7 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     } else {
         None
     };
+    prof.lap("assets");
 
     // 피드를 먼저 만든다. 페이지가 <head>에 자동 발견 링크를 넣으려면 자기 언어에
     // 피드가 있는지를 렌더 시점에 알아야 한다.
@@ -134,6 +163,7 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             }
         }
     }
+    prof.lap("feeds");
 
     // 사이트가 실제로 내보내는 URL 전체. 이게 있어야 `[설치](/start/install/)` 같은
     // 평범한 절대 경로 링크도 빌드가 검증할 수 있다 — 지금까지는 `@/`만 봤다.
@@ -194,6 +224,7 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
             (lang, minijinja::Value::from_serialize(&ctx))
         })
         .collect();
+    prof.lap("templates");
 
     let mut out = BuildOutput {
         pages: pages.len(),
@@ -227,12 +258,14 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
         );
         index.entry(page.language.clone()).or_default().push(entry);
     }
+    prof.lap("render");
 
     for (language, entries) in index {
         let json = serde_json::to_vec(&entries)
             .with_context(|| format!("{language} 검색 색인을 만들 수 없습니다"))?;
         out.files.insert(search::path(&language), json);
     }
+    prof.lap("search");
 
     // 옛 URL을 새 URL로 보내는 스텁. GitHub Pages에는 리다이렉트 규칙이 없으므로
     // 이걸 빌드가 만들지 않으면 아무도 만들어 주지 않는다.
@@ -299,6 +332,7 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     out.files.insert(".nojekyll".into(), Vec::new());
 
     check_output_collisions(&out).map_err(Kind::Content.tag())?;
+    prof.lap("generate");
 
     Ok(out)
 }
@@ -317,6 +351,7 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
     let cfg = load_config(opts)?;
     let out_dir = resolve_output_dir(opts, &cfg);
     let output = render_site(opts, cfg)?;
+    let mut prof = Profiler::new(opts.profile);
 
     // 출력 디렉터리를 매번 새로 만든다. 지운 페이지가 유령으로 남는 걸 막는다.
     if out_dir.exists() {
@@ -335,6 +370,7 @@ pub fn build(opts: &BuildOptions) -> Result<BuildStats> {
             .with_context(|| format!("{}을(를) 쓸 수 없습니다", dest.display()))
             .map_err(Kind::Io.tag())?;
     }
+    prof.lap("write");
 
     Ok(BuildStats {
         pages_written: output.pages,

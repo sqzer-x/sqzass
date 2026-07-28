@@ -103,6 +103,10 @@ struct BuildArgs {
     /// 설정의 base_url을 덮어쓴다
     #[arg(long, value_name = "URL")]
     base_url: Option<String>,
+
+    /// 페이즈별 소요 시간을 stderr로 낸다
+    #[arg(long)]
+    profile: bool,
 }
 
 fn main() {
@@ -137,6 +141,7 @@ fn run(cli: Cli) -> Result<()> {
                 output: args.output,
                 drafts: args.drafts,
                 base_url: args.base_url,
+                profile: args.profile,
             })?;
             if json {
                 println!(
@@ -181,6 +186,7 @@ fn run(cli: Cli) -> Result<()> {
                 output: None,
                 drafts: args.drafts,
                 base_url: None,
+                profile: false,
             })?;
             let gated = findings
                 .iter()

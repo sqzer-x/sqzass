@@ -119,6 +119,7 @@ mod tests {
             output: None,
             drafts: false,
             base_url: None,
+            profile: false,
         })
         .unwrap();
         assert_eq!(out.pages_written, 1);
