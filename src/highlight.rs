@@ -12,7 +12,7 @@ use comrak::adapters::SyntaxHighlighterAdapter;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use syntect::highlighting::ThemeSet;
 use syntect::html::{
     ClassStyle, ClassedHTMLGenerator, css_for_theme_with_class_style, line_tokens_to_classed_spans,
@@ -35,6 +35,15 @@ const CLASS_STYLE: ClassStyle = ClassStyle::SpacedPrefixed {
 /// 매번 얹혔다. 문법 집합은 콘텐츠와 무관하니 재사용해도 결정성에 영향이 없다.
 static SYNTAXES: OnceLock<SyntaxSet> = OnceLock::new();
 
+/// 블록 하이라이트 결과 캐시. 같은 (문법, hl_lines, 코드) 블록은 빌드 안에서
+/// 한 번만 하이라이트한다 — 문서 사이트는 설치 명령·보일러플레이트가 페이지마다
+/// 반복되고, syntect 파싱이 렌더 비용의 사실상 전부라서다.
+///
+/// 키가 해시가 아니라 튜플 그 자체인 이유: 64비트 해시 충돌은 **다른 코드 블록을
+/// 조용히 바꿔치기**한다. 이 도구가 막겠다고 한 부류의 실패라, 코드 사본 하나를
+/// 더 드는 쪽을 택한다. 값이 Arc인 건 조회가 복사 없이 나가게 하기 위해서다.
+pub type BlockCache = Arc<Mutex<HashMap<(String, Vec<(usize, usize)>, String), Arc<String>>>>;
+
 pub struct Highlighter {
     syntaxes: &'static SyntaxSet,
     /// 파싱된 펜스 옵션을 `write_code_tag` → `write_highlighted` 사이에 건네는
@@ -45,6 +54,8 @@ pub struct Highlighter {
     /// 잘못된 펜스 옵션. 렌더가 끝난 뒤 빌드를 실패시키는 데 쓴다 — 모르는 키를
     /// 조용히 무시하면 `hl_line=` 오타가 강조 없는 채로 배포된다.
     errors: Mutex<Vec<String>>,
+    /// 빌드 전체가 공유하는 블록 캐시. 인스턴스는 페이지마다지만 캐시는 하나다.
+    cache: Option<BlockCache>,
 }
 
 impl Highlighter {
@@ -55,7 +66,14 @@ impl Highlighter {
             syntaxes: SYNTAXES.get_or_init(two_face::syntax::extra_newlines),
             pending: Mutex::default(),
             errors: Mutex::default(),
+            cache: None,
         }
+    }
+
+    /// 빌드 수준 블록 캐시를 붙인다.
+    pub fn with_cache(mut self, cache: BlockCache) -> Self {
+        self.cache = Some(cache);
+        self
     }
 
     /// 잘못된 펜스 옵션들. 비어 있지 않으면 빌드를 멈춰야 한다.
@@ -262,11 +280,37 @@ impl SyntaxHighlighterAdapter for Highlighter {
             })
             .unwrap_or_else(|| self.syntaxes.find_syntax_plain_text());
 
-        if opts.hl_lines.is_empty() {
-            self.write_block(out, syntax, code)
-        } else {
-            self.write_lines(out, syntax, code, &opts.hl_lines)
+        let key = (syntax.name.clone(), opts.hl_lines.clone(), code.to_string());
+        if let Some(cache) = &self.cache {
+            let hit = cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .get(&key)
+                .cloned();
+            if let Some(html) = hit {
+                return out.write_str(&html);
+            }
         }
+
+        // 캐시 미스는 버퍼에 만들고, **에러 없이 만들어진 결과만** 캐시한다.
+        // hl_lines 범위 초과 같은 에러는 그 블록이 나오는 페이지마다 다시
+        // 기록되어야 한다 — 캐시가 에러를 삼키면 두 번째 페이지부터 조용해진다.
+        let before = self.errors.lock().unwrap_or_else(|e| e.into_inner()).len();
+        let mut buf = String::new();
+        if opts.hl_lines.is_empty() {
+            self.write_block(&mut buf, syntax, code)?;
+        } else {
+            self.write_lines(&mut buf, syntax, code, &opts.hl_lines)?;
+        }
+        let clean = self.errors.lock().unwrap_or_else(|e| e.into_inner()).len() == before;
+        out.write_str(&buf)?;
+        if clean && let Some(cache) = &self.cache {
+            cache
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .insert(key, Arc::new(buf));
+        }
+        Ok(())
     }
 
     fn write_pre_tag(
@@ -560,6 +604,56 @@ mod tests {
             rendered.bad_fences
         );
         assert!(rendered.bad_fences[0].contains("두 번"));
+    }
+
+    #[test]
+    fn cached_blocks_render_byte_identical() {
+        // 같은 Renderer(=같은 빌드)의 두 번째 렌더는 블록 캐시를 탄다. 결과가
+        // 비캐시 경로와 다르면 캐시가 출력을 바꾼 것이다.
+        let r = Renderer::new(&MarkdownConfig::default()).with_highlighter(Highlighter::new());
+        let doc = "```rust hl_lines=2 name=a.rs\nlet a = 1;\nlet b = 2;\n```";
+        let first = r.render(doc).html;
+        let second = r.render(doc).html;
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn cache_keys_include_hl_lines() {
+        // 같은 코드, 다른 hl_lines. 키에 hl_lines가 빠지면 첫 블록의 결과가
+        // 재사용돼 두 번째 블록이 엉뚱한 줄을 표시한다.
+        let r = Renderer::new(&MarkdownConfig::default()).with_highlighter(Highlighter::new());
+        let html = r
+            .render(
+                "```rust hl_lines=1\nlet a = 1;\nlet b = 2;\n```\n\n\
+                 ```rust hl_lines=2\nlet a = 1;\nlet b = 2;\n```",
+            )
+            .html;
+        let marks: Vec<&str> = html
+            .split("<mark class=\"hl-line\">")
+            .skip(1)
+            .map(|s| s.split("</mark>").next().unwrap())
+            .collect();
+        assert_eq!(marks.len(), 2, "실제: {html}");
+        assert!(
+            marks[0].contains('1') && !marks[0].contains('2'),
+            "실제: {:?}",
+            marks[0]
+        );
+        assert!(
+            marks[1].contains('2') && !marks[1].contains('1'),
+            "실제: {:?}",
+            marks[1]
+        );
+    }
+
+    #[test]
+    fn errors_recur_on_every_render_not_just_the_first() {
+        // 에러가 난 블록이 캐시되면 같은 블록을 쓰는 두 번째 페이지부터 빌드가
+        // 조용히 통과한다 — 에러 경로는 캐시하지 않는다.
+        let r = Renderer::new(&MarkdownConfig::default()).with_highlighter(Highlighter::new());
+        let doc = "```rust hl_lines=9\nfn main() {}\n```";
+        assert_eq!(r.render(doc).bad_fences.len(), 1);
+        assert_eq!(r.render(doc).bad_fences.len(), 1, "캐시가 에러를 삼켰다");
     }
 
     #[test]

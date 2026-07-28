@@ -39,6 +39,10 @@ pub struct Rendered {
 pub struct Renderer {
     cfg: MarkdownConfig,
     highlighter: Option<crate::highlight::Highlighter>,
+    /// 블록 하이라이트 캐시. 하이라이터 인스턴스는 페이지마다 새로 만들지만
+    /// (상태 격리), 캐시는 빌드 전체가 공유한다 — 반복되는 코드 블록을 두 번
+    /// 하이라이트하지 않는 게 목적이라서다.
+    highlight_cache: crate::highlight::BlockCache,
     // 링크 표와 URL 집합은 `Arc`로 들고 페이지마다 포인터만 나눠 준다. 값으로 들면
     // `render_in`이 페이지마다 O(n) 복사를 하게 되어 빌드 전체가 O(n²)가 된다.
     links: Option<Arc<crate::links::LinkIndex>>,
@@ -51,6 +55,7 @@ impl Renderer {
         Self {
             cfg: cfg.clone(),
             highlighter: None,
+            highlight_cache: Arc::default(),
             links: None,
             default_language: "en".into(),
             known: Arc::default(),
@@ -128,11 +133,11 @@ impl Renderer {
 
         // 하이라이터도 호출마다 새로 만든다. pending(펜스 옵션 핸드오프)과
         // errors가 페이지별 상태라, 인스턴스를 페이지끼리 공유하면 병렬 렌더에서
-        // 서로의 옵션과 에러가 섞인다. SyntaxSet은 정적 공유라 비용은 Mutex 두 개다.
-        let highlighter = self
-            .highlighter
-            .as_ref()
-            .map(|_| crate::highlight::Highlighter::new());
+        // 서로의 옵션과 에러가 섞인다. SyntaxSet은 정적 공유라 비용은 Mutex 두 개.
+        // 블록 캐시만은 빌드 공유다 — 페이지별 상태가 아니라 순수 결과라서.
+        let highlighter = self.highlighter.as_ref().map(|_| {
+            crate::highlight::Highlighter::new().with_cache(Arc::clone(&self.highlight_cache))
+        });
 
         // 한 번만 파싱해서 HTML과 평문을 같은 트리에서 뽑는다. 링크 재작성기는
         // 렌더 단계에서 도므로 평문 수집이 그 결과에 영향을 받지 않는다.
