@@ -546,6 +546,9 @@ h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
   cursor: pointer;
   opacity: 0;
   transition: opacity var(--tr), color var(--tr), border-color var(--tr);
+  /* 버튼은 pre 안에 있어서, 블록을 통째로 긁어 복사하면 이 라벨까지 따라온다.
+     선택에서 빼면 복사문이 코드만 남는다 — 줄 번호 레시피와 같은 이유다. */
+  user-select: none;
 }
 .prose pre.highlight:hover .copy,
 .copy:focus-visible { opacity: 1; }
