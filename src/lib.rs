@@ -240,8 +240,13 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
     // 언어 코드 → 그 언어의 검색 색인 행들.
     let mut index: BTreeMap<String, Vec<search::Entry>> = BTreeMap::new();
 
-    for page in &pages {
-        let (html, entry) = render_page(
+    // 페이지 렌더는 서로 완전히 독립이라 병렬로 돌린다. 결정성은 스케줄이 아니라
+    // 병합이 정한다: 각 결과를 페이지 인덱스 자리에 꽂고 입력 순서대로 합치므로,
+    // 출력 바이트도 — 실패할 때 어느 에러가 보이는지도 — 스레드 수와 무관하다.
+    // 분배는 원자 카운터 훔치기다. 코드 블록이 많은 페이지와 없는 페이지의 렌더
+    // 비용 차가 커서, 미리 나누는 청크 분배는 가장 느린 청크를 기다리게 된다.
+    let render_one = |page: &Page| {
+        render_page(
             page,
             &site,
             &cfg,
@@ -256,7 +261,40 @@ fn render_site(opts: &BuildOptions, cfg: Config) -> Result<BuildOutput> {
                 .contains_key(&page.language)
                 .then(|| format!("{}/{}", cfg.base_path(), feed::path(&page.language)))
                 .as_deref(),
-        )?;
+        )
+    };
+    let workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .min(pages.len())
+        .max(1);
+    let mut results: Vec<Option<Result<RenderedPage>>> =
+        std::iter::repeat_with(|| None).take(pages.len()).collect();
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let done = std::thread::scope(|scope| {
+        let handles: Vec<_> = (0..workers)
+            .map(|_| {
+                scope.spawn(|| {
+                    let mut local = Vec::new();
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(page) = pages.get(i) else { break };
+                        local.push((i, render_one(page)));
+                    }
+                    local
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().expect("렌더 스레드가 패닉했다"))
+            .collect::<Vec<_>>()
+    });
+    for (i, r) in done {
+        results[i] = Some(r);
+    }
+    for (page, result) in pages.iter().zip(results) {
+        let (html, entry) = result.expect("모든 페이지가 렌더된다")?;
         out.files.insert(
             page.out_path.to_string_lossy().replace('\\', "/"),
             html.into_bytes(),
@@ -423,6 +461,9 @@ fn check_output_collisions(out: &BuildOutput) -> Result<()> {
 /// 페이지 HTML과 그 페이지의 검색 색인 행을 함께 낸다. 본문 평문은 렌더 과정에서
 /// 이미 나오므로, 색인을 위해 문서를 다시 파싱하지 않는다. 색인을 끈 사이트에는
 /// 행을 만들지 않는다 — 페이지당 본문 사본 하나가 통째로 사라진다.
+/// 페이지 하나의 렌더 결과: HTML과, 검색이 켜져 있을 때의 색인 행.
+type RenderedPage = (String, Option<search::Entry>);
+
 // 렌더 루프 한 곳에서만 부르는 내부 함수라 인자를 묶는 구조체가 이름값을 못 한다.
 #[allow(clippy::too_many_arguments)]
 fn render_page(
@@ -434,7 +475,7 @@ fn render_page(
     sections: minijinja::Value,
     highlight_css: Option<&str>,
     feed_url: Option<&str>,
-) -> Result<(String, Option<search::Entry>)> {
+) -> Result<RenderedPage> {
     let template = select_template(page, site, templates).map_err(Kind::Template.tag())?;
 
     let site_ctx = SiteCtx {

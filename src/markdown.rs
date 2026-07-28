@@ -126,6 +126,14 @@ impl Renderer {
             options.extension.image_url_rewriter = Some(r.clone());
         }
 
+        // 하이라이터도 호출마다 새로 만든다. pending(펜스 옵션 핸드오프)과
+        // errors가 페이지별 상태라, 인스턴스를 페이지끼리 공유하면 병렬 렌더에서
+        // 서로의 옵션과 에러가 섞인다. SyntaxSet은 정적 공유라 비용은 Mutex 두 개다.
+        let highlighter = self
+            .highlighter
+            .as_ref()
+            .map(|_| crate::highlight::Highlighter::new());
+
         // 한 번만 파싱해서 HTML과 평문을 같은 트리에서 뽑는다. 링크 재작성기는
         // 렌더 단계에서 도므로 평문 수집이 그 결과에 영향을 받지 않는다.
         let arena = Arena::new();
@@ -135,7 +143,7 @@ impl Renderer {
         let html = {
             let mut plugins = Plugins::default();
             plugins.render.heading_adapter = Some(&headings);
-            if let Some(h) = &self.highlighter {
+            if let Some(h) = &highlighter {
                 plugins.render.codefence_syntax_highlighter = Some(h);
             }
             let mut out = String::new();
@@ -148,8 +156,7 @@ impl Renderer {
             .as_ref()
             .map(|r| r.take_unresolved())
             .unwrap_or_default();
-        let bad_fences = self
-            .highlighter
+        let bad_fences = highlighter
             .as_ref()
             .map(|h| h.take_errors())
             .unwrap_or_default();
@@ -467,6 +474,32 @@ mod tests {
         let r = renderer().render("## Title\n\nSome **bold** and a [link](https://example.com).");
         assert!(!r.text.contains('<'), "태그가 남았다: {}", r.text);
         assert!(r.text.contains("Some bold and a link."), "실제: {}", r.text);
+    }
+
+    #[test]
+    fn concurrent_renders_do_not_share_state() {
+        // 하이라이터의 pending/errors가 호출 간에 공유되면 병렬 렌더에서 다른
+        // 페이지의 펜스 옵션과 에러가 서로 섞인다. 단일 스레드 결과를 기준으로
+        // 여러 스레드가 반복 렌더해도 같은 결과인지 본다.
+        let r = Renderer::new(&MarkdownConfig::default())
+            .with_highlighter(crate::highlight::Highlighter::new());
+        let a = "```rust hl_lines=1 name=a.rs\nlet a = 1;\nlet b = 2;\n```";
+        let b = "```rust linenos=oops\nlet c = 3;\n```";
+        let expect_a = r.render(a).html;
+        std::thread::scope(|s| {
+            for _ in 0..8 {
+                s.spawn(|| {
+                    for _ in 0..50 {
+                        let ra = r.render(a);
+                        assert_eq!(ra.html, expect_a);
+                        assert!(ra.bad_fences.is_empty(), "실제: {:?}", ra.bad_fences);
+                        let rb = r.render(b);
+                        assert_eq!(rb.bad_fences.len(), 1, "실제: {:?}", rb.bad_fences);
+                        assert!(!rb.html.contains("data-name"), "옵션이 샜다: {}", rb.html);
+                    }
+                });
+            }
+        });
     }
 
     #[test]

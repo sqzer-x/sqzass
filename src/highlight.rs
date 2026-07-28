@@ -38,8 +38,9 @@ static SYNTAXES: OnceLock<SyntaxSet> = OnceLock::new();
 pub struct Highlighter {
     syntaxes: &'static SyntaxSet,
     /// 파싱된 펜스 옵션을 `write_code_tag` → `write_highlighted` 사이에 건네는
-    /// 보관함. comrak은 한 블록을 pre → code → highlighted 순서로 부르고 렌더는
-    /// 단일 스레드다. 병렬 렌더를 도입하면 이 상태는 렌더 단위별로 분리해야 한다.
+    /// 보관함. comrak은 한 블록을 pre → code → highlighted 순서로 부르고, 한
+    /// 페이지의 렌더는 단일 스레드다. 페이지들은 병렬로 렌더되므로 인스턴스는
+    /// **호출(페이지)마다 새로 만든다** — markdown.rs의 render_in이 그렇게 한다.
     pending: Mutex<FenceOpts>,
     /// 잘못된 펜스 옵션. 렌더가 끝난 뒤 빌드를 실패시키는 데 쓴다 — 모르는 키를
     /// 조용히 무시하면 `hl_line=` 오타가 강조 없는 채로 배포된다.
