@@ -23,7 +23,15 @@ cargo build --release
 | 요구사항 | 버전 |
 |---|---|
 | Rust | 1.97 이상 |
+| C 컴파일러 | rustc가 링커 구동에 씁니다. 기본 빌드는 구문 강조의 정규식 엔진인 Oniguruma도 이걸로 컴파일합니다. |
 | 그 외 | — |
+
+정적 릴리스가 싣는 구성 그대로 — 순수 Rust 정규식 엔진, C 소스 컴파일
+없음 — 는 플래그 하나 거리입니다:
+
+```bash
+cargo build --release --no-default-features --features pure-rust
+```
 
 ## 미리 빌드된 바이너리
 
@@ -38,8 +46,15 @@ sudo install -m755 sqzass-*/sqzass /usr/local/bin/
 ```
 
 리눅스 빌드는 정적이라 glibc를 요구하지 않고, 빌드한 배포판보다 오래된 배포판에서도
-돕니다. 이 프로젝트가 syntect를 순수 Rust 정규식 엔진으로 고정한 이유가 이것입니다.
-기본값은 C 바인딩이고, C 바인딩은 정확히 musl 정적 빌드를 깨뜨립니다.
+돕니다. 순수 Rust 정규식 엔진을 쓰는 유일한 빌드이기도 합니다 — 다른 모든 곳에서
+sqzass는 코드가 많은 사이트에서 눈에 띄게 빠른 Oniguruma로 강조하는데, Oniguruma는
+C 바인딩이고 C 바인딩은 정확히 musl 정적 빌드를 깨뜨립니다. 두 엔진의 문법 집합도
+같지 않습니다. 순수 Rust 엔진이 일부 문법의 정규식을 못 돌리기 때문에 정적
+아티팩트에는 문법 일곱 개가 통째로 빠집니다 — PowerShell, JavaScript (Babel),
+Salt State, ARM Assembly 등이요. 네이티브 빌드가 온전히 칠하는 ` ```powershell `
+이나 ` ```jsx ` 펜스가 정적 아티팩트에서는 에러 없이 평문이 됩니다. ` ```js `
+조차 마크업 구조가 다릅니다. 네이티브 빌드는 Babel 문법으로, 정적 빌드는 일반
+JavaScript로 해석합니다. 각 바이너리 자체는 여전히 완전히 결정적입니다.
 
 > [!NOTE]
 > 아직 릴리스가 없습니다 — 워크플로는 있고 첫 태그를 아직 붙이지 않았습니다.

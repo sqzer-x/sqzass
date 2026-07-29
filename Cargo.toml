@@ -27,7 +27,8 @@ blake3 = "1"
 clap      = { version = "4.6", features = ["derive"] }
 # ⚠️ comrak의 default = ["cli", "syntect-onig", "bon"] 이다. 그대로 쓰면
 #    (1) comrak 자체 CLI 의존성(clap/shell-words/xdg/fmt2io)이 딸려오고
-#    (2) syntect가 **Oniguruma(C 바인딩)**로 들어와 musl 정적 빌드/크로스컴파일이 깨진다.
+#    (2) syntect가 comrak 경유로 무조건 Oniguruma에 고정된다 — 엔진 선택은
+#        아래 [features]의 몫이라(musl 아티팩트는 pure-rust여야 한다) 차단한다.
 #    SyntaxHighlighterAdapter / HeadingAdapter 트레이트는 cfg 게이트가 없어 피처 없이도
 #    쓸 수 있고, 피처 뒤에 있는 건 comrak 내장 SyntectAdapter뿐인데 그건 우리가 직접
 #    구현하므로(업스트림 #330이 재작업 대상으로 지적) 필요 없다.
@@ -37,20 +38,17 @@ notify = "8.2"
 notify-debouncer-full = "0.7"
 serde     = { version = "1", features = ["derive"] }
 serde_json = "1"
-syntect = { version = "5.3", default-features = false, features = ["default-fancy"] }
+# 구문 강조 엔진은 [features]에서 고른다. 여기서는 둘 다 피처를 비워 둔다 —
+# syntect의 엔진 피처를 직접 켜면 엔진=fancy + two-face 덤프=onig 같은 어긋남이
+# 가능하고, 그 조합은 컴파일은 되지만 일부 정규식에서 조용히 평문으로 강등된다.
+syntect = { version = "5.3", default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "signal"] }
 toml      = "1.1"
 tower-http = { version = "0.7", features = ["fs"] }
-two-face = { version = "0.5", default-features = false, features = ["syntect-fancy"] }
+two-face = { version = "0.5", default-features = false }
 walkdir   = "2"
 
 # --- M1 (아래는 해당 기능 착수할 때 주석 해제) ---
-# syntect 기본 피처는 regex-onig(C 바인딩)이라 musl 정적 빌드/크로스컴파일이 깨진다.
-# default-fancy = 순수 Rust. 빌드 타임 작업이라 속도 차이는 무의미하다.
-# syntect  = { version = "5.3", default-features = false, features = ["default-fancy"] }
-# two-face는 syntect 기본 세트에 없는 TOML/TypeScript/Dockerfile을 채운다(문서 사이트 필수).
-# 피처를 안 맞추면 onig가 다시 딸려오므로 syntect-fancy를 반드시 명시할 것.
-# two-face = { version = "0.5", default-features = false, features = ["syntect-fancy"] }
 # blake3   = "1"                                    # 에셋 콘텐츠 해시
 # axum     = "0.8"                                  # 개발 서버
 # tower-http = { version = "0.7", features = ["fs"] }
@@ -69,15 +67,22 @@ walkdir   = "2"
 #    2000페이지 한국어 코퍼스 실측: 정답 1018건 → 27건.
 # pagefind = { version = "1.5", default-features = false, optional = true }
 
-# --- M3 이후 ---
-# rayon = "1"   # 병렬 렌더. 문서 사이트 ~60페이지엔 불필요하고, 출력 URL 충돌 시
-#               # 비결정성 문제를 같이 떠안게 된다. 페이지가 수백 개가 되면 그때.
-
 [dev-dependencies]
 insta = "1"
 
 [features]
-default = []
+# 구문 강조의 정규식 엔진. 기본은 Oniguruma(C) — fancy 대비 코드 무거운 코퍼스
+# 실측 3.0배(1000p 전 블록 고유: 3.9s → 1.3s). musl 정적 아티팩트만 pure-rust로
+# 빌드한다(release.yml의 --no-default-features --features pure-rust — C 바인딩이
+# 정적 링크를 깨는 지점이 거기라서다). 둘 다 켜지면 syntect·two-face 모두 onig로
+# 수렴하므로(syntect regex.rs에 명시된 우선순위) --all-features(AUR)도 안전하다.
+# 두 덤프는 같지 않다: fancy 덤프는 문법 7개(PowerShell·JS(Babel)·Salt State·
+# ARM Assembly 등)를 통째로 빼서 해당 펜스가 평문 폴백이 되고, js 토큰조차
+# 두 빌드가 다른 문법(Babel vs plain JS)으로 해석한다 — installation.md에
+# 문서화된 계약이고, 같은 바이너리 안에서는 여전히 결정적이다.
+default = ["onig"]
+onig = ["syntect/default-onig", "two-face/syntect-onig"]
+pure-rust = ["syntect/default-fancy", "two-face/syntect-fancy"]
 # search = ["dep:pagefind"]
 
 [profile.release]

@@ -1,5 +1,12 @@
 //! sqzass — Rust로 만든 정적 사이트 생성기.
 
+// 엔진 피처 없이 빌드하면 two-face가 자기 피처 이름으로 에러를 내는데,
+// 사용자가 알아야 할 이름은 우리 것이다.
+#[cfg(not(any(feature = "onig", feature = "pure-rust")))]
+compile_error!(
+    "정규식 엔진 피처가 필요합니다: 기본(onig) 또는 --no-default-features --features pure-rust"
+);
+
 pub mod assets;
 pub mod config;
 pub mod content;

@@ -23,7 +23,15 @@ The binary lands at `target/release/sqzass`.
 | Requirement | Version |
 |---|---|
 | Rust | 1.97 or newer |
+| A C compiler | rustc drives the linker with it; the default build also compiles Oniguruma, the highlighter's regex engine, with it. |
 | Everything else | — |
+
+The exact configuration the static release ships — the pure-Rust regex
+engine, no C source compiled — is a feature flag away:
+
+```bash
+cargo build --release --no-default-features --features pure-rust
+```
 
 ## Prebuilt binaries
 
@@ -38,9 +46,18 @@ sudo install -m755 sqzass-*/sqzass /usr/local/bin/
 ```
 
 The Linux build is static, so it has no glibc requirement and runs on
-distributions older than the one it was built on. That is the reason this
-project pins syntect to its pure-Rust regex engine: the default one is a C
-binding, and a C binding is exactly what breaks a musl static build.
+distributions older than the one it was built on. It is also the one build
+that uses the pure-Rust regex engine: everywhere else sqzass highlights with
+Oniguruma, which is measurably faster on code-heavy sites, but Oniguruma is a
+C binding and a C binding is exactly what breaks a musl static build. The
+engines' grammar sets are not identical either: the pure-Rust engine cannot
+run a few grammars' regexes, so the static artifact drops seven of them
+entirely — PowerShell, JavaScript (Babel), Salt State and ARM Assembly among
+them. A ` ```powershell ` or ` ```jsx ` fence that a native build highlights
+in full falls back to plain text in the static artifact, without an error.
+Even ` ```js ` differs in markup structure: the native build resolves it to
+the Babel grammar, the static one to plain JavaScript. Each binary is still
+fully deterministic on its own.
 
 > [!NOTE]
 > There is no release yet — the workflow exists and the first tag has not been

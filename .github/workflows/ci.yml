@@ -47,3 +47,34 @@ jobs:
           cargo run --quiet -- build -i docs -o "$RUNNER_TEMP/a"
           cargo run --quiet -- build -i docs -o "$RUNNER_TEMP/b"
           diff -r "$RUNNER_TEMP/a" "$RUNNER_TEMP/b"
+
+  # musl 릴리스 아티팩트가 쓰는 pure-rust 엔진 조합이 썩지 않게 지킨다.
+  # 크로스 엔진 바이트 비교는 하지 않는다 — fancy 덤프에는 문법 7개
+  # (PowerShell·JS(Babel)·Salt State·ARM Assembly 등)가 통째로 없어서 해당
+  # 펜스가 평문 폴백이 되고 js 토큰 해석도 갈린다. 아티팩트 간 차이는 버그가
+  # 아니라 문서화된 계약이다(docs/content/start/installation.md). 결정성은
+  # 엔진별로 지킨다.
+  pure-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: pure-rust
+
+      - name: Clippy
+        run: cargo clippy --all-targets --no-default-features --features pure-rust -- -D warnings
+
+      - name: Test
+        run: cargo test --no-default-features --features pure-rust
+
+      - name: Build is reproducible
+        run: |
+          cargo run --quiet --no-default-features --features pure-rust -- build -i docs -o "$RUNNER_TEMP/a"
+          cargo run --quiet --no-default-features --features pure-rust -- build -i docs -o "$RUNNER_TEMP/b"
+          diff -r "$RUNNER_TEMP/a" "$RUNNER_TEMP/b"

@@ -21,13 +21,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # musl 정적 링크. 이게 되는지가 이 프로젝트의 의존성 선택을 지배했다 —
-          # syntect를 default-fancy(순수 Rust)로 고정한 이유가 Oniguruma의 C
-          # 바인딩이 여기서 깨지기 때문이다. 이 잡이 그 결정의 검증이다.
+          # musl 정적 링크. 정적 아티팩트만 pure-rust 엔진으로 빌드한다 —
+          # Oniguruma(C 바인딩)가 정적 링크를 깨는 지점이 여기라서다. 기본
+          # 빌드는 onig(코드 무거운 코퍼스 실측 3배)지만, 이 잡의
+          # --no-default-features가 onig를 컴파일 타임에 차단한다. musl-gcc가
+          # onig_sys 링크에 *성공*할 수도 있으므로, 링크 실패가 순수 Rust를
+          # 지켜줄 거라 기대하지 말 것 — 플래그가 유일한 가드다.
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
+            flags: --no-default-features --features pure-rust
           - os: macos-latest
             target: aarch64-apple-darwin
+            flags: ""
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -46,7 +51,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Build
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        run: cargo build --release --locked --target ${{ matrix.target }} ${{ matrix.flags }}
 
       # 빌드된 바이너리가 실제로 사이트를 만드는지 본다. 링크만 성공하고 런타임에
       # 죽는 조합이 있으므로(정적 빌드에서 특히), 여기서 한 번 돌려 본다.
