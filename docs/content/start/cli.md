@@ -63,7 +63,7 @@ missing template, two pages claiming one URL, a misspelled configuration key.
 |---|---|---|
 | `base-url` | warn | `base_url` is still the placeholder `https://example.com`. |
 | `untranslated` | warn | A page exists in some languages and not others. |
-| `empty-section` | warn | A section has no pages, so its navigation entry leads nowhere. |
+| `empty-section` | warn | A section has no pages and its index has no body — the navigation entry leads nowhere. A single-page section whose `_index.md` carries content is fine. |
 | `description` | note | A page has no `description`. |
 | `draft` | note | A page is excluded from the build. |
 | `unused-template` | note | No page selects this template, and no template names it. |

@@ -63,7 +63,7 @@ URL을 주장하는 두 페이지, 오타 난 설정 키. `doctor`는 **빌드�
 |---|---|---|
 | `base-url` | warn | `base_url`이 아직 자리표시자 `https://example.com`입니다. |
 | `untranslated` | warn | 어떤 언어에는 있고 어떤 언어에는 없는 페이지입니다. |
-| `empty-section` | warn | 섹션에 페이지가 없어서 내비게이션 항목이 빈 곳으로 갑니다. |
+| `empty-section` | warn | 섹션에 페이지도 `_index.md` 본문도 없어서 내비게이션 항목이 빈 곳으로 갑니다. 본문이 있는 단일 페이지 섹션은 괜찮습니다. |
 | `description` | note | `description`이 없는 페이지입니다. |
 | `draft` | note | 빌드에서 빠지는 페이지입니다. |
 | `unused-template` | note | 어떤 페이지도 고르지 않고, 어떤 템플릿도 이름으로 부르지 않습니다. |

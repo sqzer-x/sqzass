@@ -172,16 +172,24 @@ fn drafts(root: &Path, cfg: &Config, out: &mut Vec<Finding>) -> Result<()> {
     Ok(())
 }
 
-/// 자식이 하나도 없는 섹션. 내비게이션에 들어가지만 눌러도 목록이 비어 있다.
+/// 자식도 본문도 없는 섹션. 내비게이션에 들어가지만 눌러도 아무것도 없다.
+///
+/// 자식이 없어도 `_index.md`에 본문이 있으면 경고하지 않는다 — 눌렀을 때
+/// 보이는 건 빈 목록이 아니라 그 본문이고, 단일 페이지 섹션은 정당한 구조다.
+/// 이 규칙이 잡으려는 건 만들다 만 디렉터리다.
 fn empty_sections(cfg: &Config, site: &Site, out: &mut Vec<Finding>) {
     for lang in cfg.languages.keys() {
         let mut stack: Vec<&crate::site::Section> = site.sections(lang).iter().collect();
         while let Some(section) = stack.pop() {
-            if section.pages.is_empty() && section.subsections.is_empty() {
+            let index_has_body = section
+                .index
+                .map(|i| !site.pages[i].body.trim().is_empty())
+                .unwrap_or(false);
+            if section.pages.is_empty() && section.subsections.is_empty() && !index_has_body {
                 out.push(Finding {
                     severity: Severity::Warn,
                     check: "empty-section",
-                    message: format!("'{}' 섹션에 페이지가 없습니다", section.title),
+                    message: format!("'{}' 섹션에 페이지도 본문도 없습니다", section.title),
                     file: Some(section.url.clone()),
                 });
             }
@@ -264,6 +272,35 @@ mod tests {
     fn severity_parses_and_rejects_nonsense() {
         assert_eq!("warn".parse::<Severity>().unwrap(), Severity::Warn);
         assert!("loud".parse::<Severity>().is_err());
+    }
+
+    #[test]
+    fn a_section_with_a_contentful_index_is_not_empty() {
+        // 단일 페이지 섹션(자식 없음, _index에 본문 있음)은 정당한 구조다.
+        // 본문까지 없는 섹션만 만들다 만 디렉터리로 잡는다.
+        let dir = std::env::temp_dir().join(format!("sqzass-doctor-empty-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        for (d, body) in [("full", "충실한 본문이 있다."), ("bare", "")] {
+            let p = dir.join("content").join(d);
+            std::fs::create_dir_all(&p).unwrap();
+            std::fs::write(
+                p.join("_index.md"),
+                format!("+++\ntitle = \"{d}\"\n+++\n{body}"),
+            )
+            .unwrap();
+        }
+        let cfg: Config = toml::from_str(
+            "title = \"t\"\nbase_url = \"https://x.dev\"\n[languages.en]\nname = \"English\"\n",
+        )
+        .unwrap();
+        let pages = crate::content::discover(&dir, &cfg, false).unwrap();
+        let site = Site::build(&pages, &cfg);
+        let mut out = Vec::new();
+        empty_sections(&cfg, &site, &mut out);
+        let flagged: Vec<_> = out.iter().filter(|f| f.check == "empty-section").collect();
+        assert_eq!(flagged.len(), 1, "{out:?}");
+        assert_eq!(flagged[0].file.as_deref(), Some("/bare/"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
