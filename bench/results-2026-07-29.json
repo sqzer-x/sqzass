@@ -1,0 +1,233 @@
+{
+ "date": "2026-07-29",
+ "machine": "4 cores (taskset -c 0-3), AC, performance governor",
+ "versions": {
+  "sqzass": "0.1.0 (bf1a9dc)",
+  "hugo": "0.164.0+extended",
+  "zola": "0.22.1",
+  "jekyll": "4.4.1 (ruby 3.4.10)",
+  "astro": "5.18.2 (node 26.5.0)"
+ },
+ "results": [
+  {
+   "tool": "astro",
+   "scenario": "blog",
+   "median_ms": 6699,
+   "runs_ms": [
+    6699,
+    7079,
+    6666
+   ],
+   "peak_rss_mb": 604
+  },
+  {
+   "tool": "astro",
+   "scenario": "heavyr",
+   "median_ms": 22090,
+   "runs_ms": [
+    23517,
+    22090,
+    21101
+   ],
+   "peak_rss_mb": 2578
+  },
+  {
+   "tool": "astro",
+   "scenario": "heavyu",
+   "median_ms": 23958,
+   "runs_ms": [
+    23211,
+    25187,
+    23958
+   ],
+   "peak_rss_mb": 2607
+  },
+  {
+   "tool": "astro",
+   "scenario": "minimal",
+   "median_ms": 4672,
+   "runs_ms": [
+    3899,
+    4672,
+    4894
+   ],
+   "peak_rss_mb": 555
+  },
+  {
+   "tool": "hugo",
+   "scenario": "blog",
+   "median_ms": 112,
+   "runs_ms": [
+    114,
+    112,
+    111
+   ],
+   "peak_rss_mb": 140
+  },
+  {
+   "tool": "hugo",
+   "scenario": "heavyr",
+   "median_ms": 3559,
+   "runs_ms": [
+    3559,
+    3553,
+    3604
+   ],
+   "peak_rss_mb": 411
+  },
+  {
+   "tool": "hugo",
+   "scenario": "heavyu",
+   "median_ms": 5912,
+   "runs_ms": [
+    5792,
+    6061,
+    5912
+   ],
+   "peak_rss_mb": 421
+  },
+  {
+   "tool": "hugo",
+   "scenario": "minimal",
+   "median_ms": 93,
+   "runs_ms": [
+    94,
+    93,
+    92
+   ],
+   "peak_rss_mb": 123
+  },
+  {
+   "tool": "jekyll",
+   "scenario": "blog",
+   "median_ms": 752,
+   "runs_ms": [
+    769,
+    752,
+    746
+   ],
+   "peak_rss_mb": 62
+  },
+  {
+   "tool": "jekyll",
+   "scenario": "heavyr",
+   "median_ms": 10850,
+   "runs_ms": [
+    9754,
+    10850,
+    11406
+   ],
+   "peak_rss_mb": 174
+  },
+  {
+   "tool": "jekyll",
+   "scenario": "heavyu",
+   "median_ms": 11456,
+   "runs_ms": [
+    11456,
+    11668,
+    10797
+   ],
+   "peak_rss_mb": 182
+  },
+  {
+   "tool": "jekyll",
+   "scenario": "minimal",
+   "median_ms": 442,
+   "runs_ms": [
+    446,
+    442,
+    441
+   ],
+   "peak_rss_mb": 56
+  },
+  {
+   "tool": "sqzass",
+   "scenario": "blog",
+   "median_ms": 25,
+   "runs_ms": [
+    25,
+    25,
+    24
+   ],
+   "peak_rss_mb": 24
+  },
+  {
+   "tool": "sqzass",
+   "scenario": "heavyr",
+   "median_ms": 187,
+   "runs_ms": [
+    191,
+    186,
+    187
+   ],
+   "peak_rss_mb": 229
+  },
+  {
+   "tool": "sqzass",
+   "scenario": "heavyu",
+   "median_ms": 1298,
+   "runs_ms": [
+    1298,
+    1308,
+    1291
+   ],
+   "peak_rss_mb": 439
+  },
+  {
+   "tool": "sqzass",
+   "scenario": "minimal",
+   "median_ms": 18,
+   "runs_ms": [
+    17,
+    18,
+    18
+   ],
+   "peak_rss_mb": 15
+  },
+  {
+   "tool": "zola",
+   "scenario": "blog",
+   "median_ms": 172,
+   "runs_ms": [
+    175,
+    169,
+    172
+   ],
+   "peak_rss_mb": 142
+  },
+  {
+   "tool": "zola",
+   "scenario": "heavyr",
+   "median_ms": 5084,
+   "runs_ms": [
+    5084,
+    5055,
+    5398
+   ],
+   "peak_rss_mb": 269
+  },
+  {
+   "tool": "zola",
+   "scenario": "heavyu",
+   "median_ms": 6789,
+   "runs_ms": [
+    6969,
+    6752,
+    6789
+   ],
+   "peak_rss_mb": 279
+  },
+  {
+   "tool": "zola",
+   "scenario": "minimal",
+   "median_ms": 141,
+   "runs_ms": [
+    141,
+    142,
+    140
+   ],
+   "peak_rss_mb": 136
+  }
+ ]
+}

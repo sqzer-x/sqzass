@@ -598,6 +598,36 @@ h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
   border-radius: var(--radius) var(--radius) 0 0;
 }
 
+/* ---------- benchmark bars ---------- */
+
+/* 도구 식별은 행 라벨이, 수치는 막대 옆 텍스트가 운반한다. 색은 우리(악센트)와
+   비교군(중립) 둘뿐이라 색이 단독으로 정보를 나르지 않는다. 막대 폭이 style
+   속성이 아니라 SVG rect의 표현 속성인 이유: 인라인 style은 이 사이트가
+   지켜 온 strict style-src CSP 가능성을 깨기 때문이다. */
+.bench {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45rem 0.8rem;
+  align-items: center;
+  margin: 0.8rem 0 1.8rem;
+}
+.bench .b-name {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--ink);
+  text-align: right;
+}
+.bench .b-row { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+.bench svg { flex: 1; min-width: 0; height: 0.75rem; display: block; }
+.bench rect { fill: var(--ink-3); opacity: 0.55; }
+.bench rect.b-us { fill: var(--accent); opacity: 1; }
+.bench .b-val {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
 /* ---------- tables ---------- */
 
 /* `display: block`이었다. 넓은 표를 가로로 굴리려던 것인데, 그러면 표가 내부
