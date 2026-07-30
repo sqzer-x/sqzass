@@ -21,6 +21,7 @@ bench_more = "Full numbers and methodology →"
 zero_label = "bytes of difference between two builds of the same input — checked in CI on every push"
 
 foot_benchmark = "Benchmark"
+foot_line = "A static site generator in Rust that squeezes a thousand pages into 25 ms."
 
 [[extra.bench]]
 label = "1,000 pages, minimal markdown"

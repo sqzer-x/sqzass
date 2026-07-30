@@ -21,6 +21,7 @@ bench_more = "전체 수치와 측정 방법 →"
 zero_label = "같은 입력을 두 번 빌드했을 때 생기는 바이트 차이입니다. push마다 CI가 두 번 빌드해서 비교합니다."
 
 foot_benchmark = "벤치마크"
+foot_line = "천 페이지를 25밀리초로 쥐어짜는, Rust로 만든 정적 사이트 생성기."
 
 [[extra.bench]]
 label = "1,000페이지, 최소 마크다운"
