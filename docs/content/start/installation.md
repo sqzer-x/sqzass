@@ -59,10 +59,6 @@ Even ` ```js ` differs in markup structure: the native build resolves it to
 the Babel grammar, the static one to plain JavaScript. Each binary is still
 fully deterministic on its own.
 
-> [!NOTE]
-> There is no release yet — the workflow exists and the first tag has not been
-> cut. Build from source until then.
-
 ## Checking the install
 
 ```bash
