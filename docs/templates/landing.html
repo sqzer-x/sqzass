@@ -1,13 +1,14 @@
-{#- 랜딩. base.html을 상속하지 않는 완전 독립 문서다 — 문서 크롬(마스트헤드·
-    사이드바·검색·테마 토글)이 전부 없다. 테마는 다크 하나로 커밋한다: 심해
-    발광 콘셉트(오징어 로고 → 먹물 → 심해)의 페이지라 밝은 변형이 없다.
-    카피는 전부 front matter의 extra에 있고(양어 파일이 키를 1:1로 가진다),
-    이 파일은 구조만 안다. 아트워크는 손으로 쓴 인라인 SVG — 외부 이미지도,
-    인라인 style도 없다. #}
+{#- 랜딩. base.html을 상속하지 않는 독립 문서다 — 문서 크롬 없이 자체 구조를
+    가진다: 고정 반투명 내비 / 히어로 / 벤토 그리드 / 푸터.
+    브랜드는 이름 그대로 squeeze — 카피와 연출이 "쥐어짜기"를 말한다.
+    테마는 docs와 같은 계약: data-theme을 템플릿이 쓰고, localStorage("theme",
+    docs와 같은 키)가 프리페인트 스크립트로 덮는다. 그래서 문서에서 고른 테마가
+    랜딩에도 그대로 따라온다. 카피는 전부 extra에 있고(양어 키 1:1), 이 파일은
+    구조만 안다. #}
 {%- set ko = page.language == "ko" %}
 {%- set home = site.base_path ~ ("/ko/" if ko else "/") %}
 <!doctype html>
-<html lang="{{ page.language }}">
+<html lang="{{ page.language }}" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -31,189 +32,126 @@
 <meta property="og:description" content="{{ page.description }}">
 <meta name="twitter:card" content="summary">
 <link rel="stylesheet" href="{{ asset("css/landing.css") }}">
+<script>
+/* 첫 페인트 전에 저장된 테마를 얹는다. base.html과 같은 키·같은 이유. */
+(function(){try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}})();
+</script>
 <script src="{{ asset("js/motion.js") }}" defer></script>
 <script src="{{ asset("js/landing.js") }}" defer></script>
 </head>
 <body>
-<div class="specks" aria-hidden="true"></div>
 <a class="skip" href="#main">{{ t("skip_to_content") }}</a>
 
-<header class="topbar">
-  <a class="mark" href="{{ home }}">
-    <img src="{{ asset("images/logo.png") }}" alt="" width="121" height="120">
-    <span>{{ site.title }}</span>
-  </a>
-  <nav class="topnav">
-    <a href="{{ home }}start/">{{ t("documentation") }}</a>
-    <a href="{{ home }}benchmark/">{{ page.extra.foot_benchmark }}</a>
-    <span class="langs">
-    {%- for lang in page.translations %}
-      <a class="lang-pill" href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.code | upper }}</a>
-    {%- endfor %}
-    </span>
-    <a class="gh" href="https://github.com/sqzer-x/sqzass" aria-label="GitHub" title="GitHub">
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+<header class="nav">
+  <div class="nav-in">
+    <a class="mark" href="{{ home }}">
+      <img src="{{ asset("images/logo.png") }}" alt="" width="121" height="120">
+      <span>{{ site.title }}</span>
     </a>
-  </nav>
+    <nav class="nav-links">
+      <a href="{{ home }}start/">{{ t("documentation") }}</a>
+      <a href="{{ home }}benchmark/">{{ page.extra.foot_benchmark }}</a>
+      {%- for lang in page.translations %}
+      <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
+      {%- endfor %}
+      <a class="nav-icon" href="https://github.com/sqzer-x/sqzass" aria-label="GitHub" title="GitHub">
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      </a>
+      <button class="nav-icon theme-toggle" type="button" aria-label="{{ t("theme") }}" title="{{ t("theme") }}">
+        <svg class="i-sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+        </svg>
+        <svg class="i-moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+        </svg>
+      </button>
+    </nav>
+  </div>
 </header>
 
 <main id="main">
   <section class="hero">
-    <div class="inner hero-grid">
-      <div class="hero-copy">
-        <p class="kicker" data-reveal>
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-          {{ page.extra.hero_kicker }}
-        </p>
-        <h1 class="display" data-reveal>{{ page.extra.hero_title_a }}<br><em>{{ page.extra.hero_title_b }}</em></h1>
-        <p class="sub" data-reveal>{{ page.extra.hero_sub }}</p>
-        <p class="cta" data-reveal>
-          <a class="btn btn-primary" href="{{ home }}start/">{{ page.extra.cta_start }}</a>
-          <a class="btn btn-ghost" href="https://github.com/sqzer-x/sqzass">{{ page.extra.cta_github }}</a>
-        </p>
-        <div class="install" data-reveal>
-          <code>$ curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh</code>
-          <button class="inst-copy" type="button" data-copy-text="curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh"
-                  aria-label="{{ t("copy") }}" data-copied="{{ t("copied") }}">
-            <svg class="i-copy" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-            <svg class="i-check" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          </button>
-        </div>
-      </div>
-
-      {#- 심해 먹물결 아트워크. 장식이므로 보조기기에는 숨긴다. #}
-      <div class="hero-art" aria-hidden="true" data-float>
-        <svg class="art" viewBox="0 0 520 520">
-          <defs>
-            <clipPath id="artclip"><circle cx="260" cy="260" r="238"/></clipPath>
-            <radialGradient id="abg" cx="50%" cy="30%" r="80%">
-              <stop offset="0%" stop-color="#132a4e"/>
-              <stop offset="55%" stop-color="#0b1830"/>
-              <stop offset="100%" stop-color="#060d1a"/>
-            </radialGradient>
-            <radialGradient id="alight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#59d8ff" stop-opacity="0.55"/>
-              <stop offset="100%" stop-color="#59d8ff" stop-opacity="0"/>
-            </radialGradient>
-            <linearGradient id="w1" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#1c3f6e"/><stop offset="100%" stop-color="#122a4d"/>
-            </linearGradient>
-            <linearGradient id="w2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#152f56"/><stop offset="100%" stop-color="#0d1f3c"/>
-            </linearGradient>
-            <linearGradient id="w3" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0f2342"/><stop offset="100%" stop-color="#081228"/>
-            </linearGradient>
-            <linearGradient id="w4" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0a1830"/><stop offset="100%" stop-color="#050b16"/>
-            </linearGradient>
-            <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="6"/>
-            </filter>
-          </defs>
-          <circle cx="260" cy="260" r="238" fill="url(#abg)"/>
-          <g clip-path="url(#artclip)">
-            <ellipse cx="260" cy="118" rx="150" ry="120" fill="url(#alight)" filter="url(#soft)"/>
-            <path d="M-20 236 C 70 206, 150 268, 250 240 S 430 196, 540 244 L 540 560 L -20 560 Z" fill="url(#w1)"/>
-            <path d="M-20 232 C 70 202, 150 264, 250 236 S 430 192, 540 240" fill="none" stroke="#6fd8ff" stroke-opacity="0.65" stroke-width="2.5"/>
-            <path d="M-20 302 C 90 272, 180 330, 280 304 S 450 262, 540 306 L 540 560 L -20 560 Z" fill="url(#w2)"/>
-            <path d="M-20 298 C 90 268, 180 326, 280 300 S 450 258, 540 302" fill="none" stroke="#4fb6f5" stroke-opacity="0.4" stroke-width="2"/>
-            <path d="M-20 372 C 80 346, 170 398, 270 374 S 440 336, 540 376 L 540 560 L -20 560 Z" fill="url(#w3)"/>
-            <path d="M-20 368 C 80 342, 170 394, 270 370 S 440 332, 540 372" fill="none" stroke="#3b86d8" stroke-opacity="0.3" stroke-width="1.8"/>
-            <path d="M-20 442 C 90 420, 190 462, 290 444 S 460 414, 540 446 L 540 560 L -20 560 Z" fill="url(#w4)"/>
-            <circle cx="150" cy="160" r="2.4" fill="#8fe5ff" fill-opacity="0.9"/>
-            <circle cx="196" cy="120" r="1.6" fill="#8fe5ff" fill-opacity="0.7"/>
-            <circle cx="330" cy="146" r="2" fill="#8fe5ff" fill-opacity="0.8"/>
-            <circle cx="382" cy="190" r="1.4" fill="#8fe5ff" fill-opacity="0.6"/>
-            <circle cx="256" cy="86" r="1.8" fill="#c9f2ff" fill-opacity="0.9"/>
-            <circle cx="110" cy="210" r="1.3" fill="#8fe5ff" fill-opacity="0.5"/>
-            <circle cx="420" cy="130" r="1.6" fill="#8fe5ff" fill-opacity="0.6"/>
-            <circle cx="150" cy="160" r="7" fill="#59d8ff" fill-opacity="0.25" filter="url(#soft)"/>
-            <circle cx="330" cy="146" r="6" fill="#59d8ff" fill-opacity="0.22" filter="url(#soft)"/>
-            <circle cx="256" cy="86" r="6" fill="#59d8ff" fill-opacity="0.25" filter="url(#soft)"/>
-          </g>
-          <circle cx="260" cy="260" r="238" fill="none" stroke="#9fc8ff" stroke-opacity="0.16" stroke-width="1.5"/>
-          <circle cx="260" cy="260" r="252" fill="none" stroke="#9fc8ff" stroke-opacity="0.07" stroke-width="1"/>
-        </svg>
-      </div>
-    </div>
-  </section>
-
-  <section class="intro">
-    <div class="inner" data-reveal>
-      {{ page.content | safe }}
-    </div>
-  </section>
-
-  <section class="band bench" aria-labelledby="bench-h">
+    <div class="blob" aria-hidden="true"></div>
     <div class="inner">
-      <h2 id="bench-h" data-reveal>{{ page.extra.bench_title }}</h2>
-      <p class="band-note" data-reveal>{{ page.extra.bench_note }}</p>
-      <div class="bench-card" data-reveal>
-        {%- for row in page.extra.bench %}
-        <div class="row">
-          <h3>{{ row.label }}</h3>
-          <div class="meas us">
-            <span class="who">sqzass</span>
-            <svg class="track" aria-hidden="true" preserveAspectRatio="none">
-              <rect class="fill" data-bar width="{{ row.us_w }}" height="100%" rx="3"></rect>
-            </svg>
-            <span class="val">{{ row.us_ms }} ms</span>
-          </div>
-          <div class="meas">
-            <span class="who">Hugo</span>
-            <svg class="track" aria-hidden="true" preserveAspectRatio="none">
-              <rect class="fill" data-bar width="{{ row.them_w }}" height="100%" rx="3"></rect>
-            </svg>
-            <span class="val">{{ row.them_ms }} ms</span>
-          </div>
-        </div>
-        {%- endfor %}
-        <p class="zero">
-          <span class="zero-num">0</span>
-          <span class="zero-label">{{ page.extra.zero_label }}</span>
-        </p>
+      <p class="kicker" data-reveal>{{ page.extra.hero_kicker }}</p>
+      <h1 class="display" data-reveal>{{ page.extra.hero_title_a }}<br><em data-squeeze>{{ page.extra.hero_title_b }}</em></h1>
+      <p class="sub" data-reveal>{{ page.extra.hero_sub }}</p>
+      <p class="cta" data-reveal>
+        <a class="btn btn-primary" href="{{ home }}start/">{{ page.extra.cta_start }}</a>
+        <a class="btn btn-ghost" href="https://github.com/sqzer-x/sqzass">{{ page.extra.cta_github }}</a>
+      </p>
+      <div class="lede" data-reveal>
+        {{ page.content | safe }}
       </div>
-      <p class="band-more" data-reveal><a href="{{ home }}benchmark/">{{ page.extra.bench_more }}</a></p>
     </div>
   </section>
 
-  <section class="band feats" aria-labelledby="feats-h">
+  <section class="bento-wrap" aria-label="{{ page.extra.bento_label }}">
     <div class="inner">
-      <h2 id="feats-h" data-reveal>{{ page.extra.features_title }}</h2>
-      <ul class="cards">
+      <div class="bento">
+
+        <article class="tile t-bench" data-reveal>
+          <h2>{{ page.extra.bench_title }}</h2>
+          <p class="note">{{ page.extra.bench_note }}</p>
+          {%- for row in page.extra.bench %}
+          <div class="row">
+            <h3>{{ row.label }}</h3>
+            <div class="meas us">
+              <span class="who">sqzass</span>
+              <svg class="track" aria-hidden="true" preserveAspectRatio="none">
+                <rect class="fill" data-bar width="{{ row.us_w }}" height="100%" rx="3"></rect>
+              </svg>
+              <span class="val">{{ row.us_ms }} ms</span>
+            </div>
+            <div class="meas">
+              <span class="who">Hugo</span>
+              <svg class="track" aria-hidden="true" preserveAspectRatio="none">
+                <rect class="fill" data-bar width="{{ row.them_w }}" height="100%" rx="3"></rect>
+              </svg>
+              <span class="val">{{ row.them_ms }} ms</span>
+            </div>
+          </div>
+          {%- endfor %}
+          <p class="tile-link"><a href="{{ home }}benchmark/">{{ page.extra.bench_more }}</a></p>
+        </article>
+
+        <article class="tile t-install" data-reveal>
+          <h2>{{ page.extra.install_title }}</h2>
+          <div class="install">
+            <code>curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh</code>
+            <button class="inst-copy" type="button" data-copy-text="curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh"
+                    aria-label="{{ t("copy") }}" data-copied="{{ t("copied") }}">
+              <svg class="i-copy" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              <svg class="i-check" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </button>
+          </div>
+          <p class="note">{{ page.extra.install_alt }} <code class="inline">cargo install --git https://github.com/sqzer-x/sqzass</code></p>
+        </article>
+
+        <article class="tile t-zero" data-reveal>
+          <p class="zero-num">0</p>
+          <p class="note">{{ page.extra.zero_label }}</p>
+        </article>
+
         {%- for f in page.extra.features %}
-        <li class="card" data-reveal>
-          <h3>{{ f.title }}</h3>
-          <p>{{ f.body }}</p>
-        </li>
+        <article class="tile" data-reveal>
+          <h2>{{ f.title }}</h2>
+          <p class="note">{{ f.body }}</p>
+        </article>
         {%- endfor %}
-      </ul>
-      <p class="band-more" data-reveal><a href="{{ home }}start/">{{ page.extra.features_more }}</a></p>
-    </div>
-  </section>
 
-  <section class="band quick" aria-labelledby="quick-h">
-    <div class="inner">
-      <h2 id="quick-h" data-reveal>{{ page.extra.quick_title }}</h2>
-      <div class="term" data-reveal>
-        <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i></div>
-        {#- 아래 출력 줄들은 전부 실행 결과 원문이다. 지어낸 줄이 없다. #}
-        <pre><code><span class="t-p">$</span> curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh
-<span class="t-o">설치했습니다: /usr/local/bin/sqzass (sqzass 0.1.0)</span>
-<span class="t-p">$</span> sqzass init demo
-<span class="t-o">  demo/sqzass.toml
-  demo/content/_index.md
-  demo/templates/page.html</span>
-<span class="t-p">$</span> sqzass build -i demo
-<span class="t-o">1 pages → demo/public</span></code></pre>
+        <article class="tile t-demo" data-reveal>
+          <h2>{{ page.extra.demo_title }}</h2>
+          <p class="note">{{ page.extra.demo_body }}</p>
+          <p class="tile-link"><a href="{{ home }}start/">{{ t("documentation") }} →</a></p>
+        </article>
+
       </div>
-      <p class="band-note quick-note" data-reveal>{{ page.extra.quick_note }} <a href="{{ home }}start/installation/">{{ page.extra.quick_note_link }}</a></p>
     </div>
   </section>
 
   <footer class="foot">
-    <div class="inner">
+    <div class="inner foot-in">
       <nav class="foot-nav">
         <a href="{{ home }}start/">{{ t("documentation") }}</a>
         <a href="{{ home }}benchmark/">{{ page.extra.foot_benchmark }}</a>

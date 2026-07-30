@@ -6,25 +6,24 @@ template = "landing.html"
 
 [extra]
 hero_kicker = "A static site generator, written in Rust"
-hero_title_a = "One thousand pages."
-hero_title_b = "Twenty-five milliseconds."
-hero_sub = "sqzass builds fast and proves it: five generators, one machine, one corpus, method published. The output is correct on any host."
+hero_title_a = "A thousand pages,"
+hero_title_b = "squeezed into 25 ms."
+hero_sub = "The name is the promise: press a whole site out in one go. Measured against Hugo, Zola, Jekyll and Astro on the same machine, with the method published."
 cta_start = "Get started"
 cta_github = "View on GitHub"
 
+bento_label = "Why sqzass"
+
 bench_title = "Measured, not claimed"
-bench_note = "Each row compares sqzass with Hugo, the fastest of the four generators we measured — same machine, cold builds, median of three. Bars are to scale within each row, and the sqzass times include building the search index, sitemap and llms.txt."
-zero_label = "bytes of difference between two builds of the same input — rebuilt and diffed in CI on every push"
+bench_note = "vs Hugo, the fastest of the four we measured — same machine, cold builds, median of three. Bars are to scale, and the sqzass times include the search index, sitemap and llms.txt."
 bench_more = "Full numbers and methodology →"
+zero_label = "bytes of difference between two builds of the same input — checked in CI on every push"
 
-features_title = "What you get"
-features_more = "Everything else is in the documentation →"
+install_title = "Install in one line"
+install_alt = "With Rust instead:"
 
-quick_title = "Quick start"
-quick_install = "Install — either line works"
-quick_use = "Make a site"
-quick_note = "The script detects your platform and verifies checksums; the cargo line builds from source. More options are in"
-quick_note_link = "the install guide."
+demo_title = "The docs are the demo"
+demo_body = "This site is built by sqzass itself, from docs/ in the repository — every page, both languages, the search index and the feeds."
 
 foot_benchmark = "Benchmark"
 built_line = "This site is built by sqzass itself — the docs are the demo."
@@ -51,24 +50,12 @@ them_ms = "5,912"
 them_w = "100%"
 
 [[extra.features]]
-title = "Deterministic builds"
-body = "The same input produces the same bytes, on any thread count. Rendering is parallel; determinism comes from the merge."
+title = "Korean is first-class"
+body = "Pages pair by filename in English and Korean, links resolve per language, and search matches substrings — the only way 최적화 is ever found inside 검색엔진최적화."
 
 [[extra.features]]
 title = "Broken references stop the build"
 body = "A dead link, a missing template, a typo in front matter — each is an error with a stable identifier and exit code, not a warning you scroll past."
-
-[[extra.features]]
-title = "Highlighting at build time"
-body = "Syntax highlighting emits CSS classes, never inline styles — so dark mode stays cheap and a strict CSP stays possible."
-
-[[extra.features]]
-title = "Search that can read Korean"
-body = "A substring index instead of a word index, because particles and compounds defeat stemmers. Measured on a 2,000-page corpus before it was chosen."
-
-[[extra.features]]
-title = "Two languages, side by side"
-body = "English and Korean pages pair by filename. Links resolve per language, and an untranslated page never leaves a dead link behind."
 
 [[extra.features]]
 title = "One small binary"
