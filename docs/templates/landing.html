@@ -1,0 +1,156 @@
+{#- 랜딩. base.html을 상속하지 않는 완전 독립 문서다 — 문서 크롬(마스트헤드·
+    사이드바·검색·테마 토글)이 전부 없다. 테마도 하나로 커밋한다: 이 페이지에는
+    하이라이트된 코드가 없어서 [data-theme] 기계를 얹을 이유가 없다.
+    카피는 전부 front matter의 extra에 있고(양어 파일이 키를 1:1로 가진다),
+    이 파일은 구조만 안다. #}
+{%- set ko = page.language == "ko" %}
+{%- set home = site.base_path ~ ("/ko/" if ko else "/") %}
+<!doctype html>
+<html lang="{{ page.language }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ site.title }} — {{ page.description }}</title>
+<meta name="description" content="{{ page.description }}">
+<link rel="canonical" href="{{ page.permalink }}">
+{%- if site.feed %}
+<link rel="alternate" type="application/atom+xml" title="{{ site.title }}" href="{{ site.feed }}">
+{%- endif %}
+<link rel="icon" type="image/png" media="(prefers-color-scheme: dark)" href="{{ asset("images/favicon-dark.png") }}">
+<link rel="icon" type="image/png" href="{{ asset("images/favicon.png") }}">
+<link rel="apple-touch-icon" href="{{ asset("images/favicon.png") }}">
+{%- for lang in page.translations %}
+<link rel="alternate" hreflang="{{ lang.code }}" href="{{ site.origin }}{{ lang.url }}">
+{%- endfor %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ site.title }}">
+<meta property="og:title" content="{{ page.title }}">
+<meta property="og:url" content="{{ page.permalink }}">
+<meta property="og:locale" content="{{ "ko_KR" if ko else "en_US" }}">
+<meta property="og:description" content="{{ page.description }}">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="{{ asset("css/landing.css") }}">
+<script src="{{ asset("js/motion.js") }}" defer></script>
+<script src="{{ asset("js/landing.js") }}" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">{{ t("skip_to_content") }}</a>
+
+<header class="topbar">
+  <a class="mark" href="{{ home }}">
+    <img src="{{ asset("images/logo.png") }}" alt="" width="121" height="120">
+    <span>{{ site.title }}</span>
+  </a>
+  <nav class="topnav">
+    <a href="{{ home }}start/">{{ t("documentation") }}</a>
+    {%- for lang in page.translations %}
+    <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
+    {%- endfor %}
+    <a href="https://github.com/sqzer-x/sqzass">GitHub</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="inner">
+      <p class="kicker" data-reveal>{{ page.extra.hero_kicker }}</p>
+      <h1 class="display" data-reveal>{{ page.extra.hero_title_a }} <em>{{ page.extra.hero_title_b }}</em></h1>
+      <p class="sub" data-reveal>{{ page.extra.hero_sub }}</p>
+      <p class="cta" data-reveal>
+        <a class="btn btn-primary" href="{{ home }}start/">{{ page.extra.cta_start }}</a>
+        <a class="btn" href="https://github.com/sqzer-x/sqzass">GitHub</a>
+      </p>
+    </div>
+  </section>
+
+  <section class="intro">
+    <div class="inner" data-reveal>
+      {{ page.content | safe }}
+    </div>
+  </section>
+
+  <section class="band bench" aria-labelledby="bench-h">
+    <div class="inner">
+      <h2 id="bench-h" data-reveal>{{ page.extra.bench_title }}</h2>
+      <p class="bench-note" data-reveal>{{ page.extra.bench_note }}</p>
+      {%- for row in page.extra.bench %}
+      <div class="row" data-reveal>
+        <h3>{{ row.label }}</h3>
+        <div class="meas us">
+          <span class="who">sqzass</span>
+          <svg class="track" aria-hidden="true" preserveAspectRatio="none">
+            <rect class="fill" data-bar width="{{ row.us_w }}" height="100%" rx="2"></rect>
+          </svg>
+          <span class="val">{{ row.us_ms }} ms</span>
+        </div>
+        <div class="meas">
+          <span class="who">Hugo</span>
+          <svg class="track" aria-hidden="true" preserveAspectRatio="none">
+            <rect class="fill" data-bar width="{{ row.them_w }}" height="100%" rx="2"></rect>
+          </svg>
+          <span class="val">{{ row.them_ms }} ms</span>
+        </div>
+      </div>
+      {%- endfor %}
+      <p class="zero" data-reveal>
+        <span class="zero-num">0</span>
+        <span class="zero-label">{{ page.extra.zero_label }}</span>
+      </p>
+      <p class="bench-more" data-reveal><a href="{{ home }}benchmark/">{{ page.extra.bench_more }}</a></p>
+    </div>
+  </section>
+
+  <section class="band feats" aria-labelledby="feats-h">
+    <div class="inner">
+      <h2 id="feats-h" data-reveal>{{ page.extra.features_title }}</h2>
+      <ul class="cards">
+        {%- for f in page.extra.features %}
+        <li class="card" data-reveal>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.body }}</p>
+        </li>
+        {%- endfor %}
+      </ul>
+      <p class="more" data-reveal><a href="{{ home }}start/">{{ page.extra.features_more }}</a></p>
+    </div>
+  </section>
+
+  <section class="band quick" aria-labelledby="quick-h">
+    <div class="inner">
+      <h2 id="quick-h" data-reveal>{{ page.extra.quick_title }}</h2>
+      <div class="steps">
+        <div class="step" data-reveal>
+          <h3>{{ page.extra.quick_install }}</h3>
+          <pre><code>curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-v0.1.0-x86_64-unknown-linux-musl.tar.gz
+tar xzf sqzass-*.tar.gz
+sudo install -m755 sqzass-*/sqzass /usr/local/bin/</code></pre>
+        </div>
+        <div class="step" data-reveal>
+          <h3>{{ page.extra.quick_use }}</h3>
+          <pre><code>sqzass init my-site
+sqzass serve -i my-site</code></pre>
+        </div>
+      </div>
+      <p class="quick-note" data-reveal>{{ page.extra.quick_note }} <a href="{{ home }}start/installation/">{{ page.extra.quick_note_link }}</a></p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="inner">
+      <nav class="foot-nav">
+        <a href="{{ home }}start/">{{ t("documentation") }}</a>
+        <a href="{{ home }}benchmark/">{{ page.extra.foot_benchmark }}</a>
+        <a href="https://github.com/sqzer-x/sqzass/releases">{{ t("footer_releases") }}</a>
+        <a href="https://github.com/sqzer-x/sqzass/issues">{{ t("footer_issues") }}</a>
+        <a href="https://github.com/sqzer-x/sqzass">GitHub</a>
+        {%- for lang in page.translations %}
+        <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
+        {%- endfor %}
+      </nav>
+      <p>{{ page.extra.status_line }}</p>
+      <p>{{ page.extra.built_line }} · MIT</p>
+    </div>
+  </footer>
+</main>
+</body>
+</html>
