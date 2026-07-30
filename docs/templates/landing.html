@@ -80,6 +80,16 @@
         <a class="btn btn-primary" href="{{ home }}start/">{{ page.extra.cta_start }}</a>
         <a class="btn btn-ghost" href="https://github.com/sqzer-x/sqzass">{{ page.extra.cta_github }}</a>
       </p>
+      {#- 제일 중요한 것: 설치 한 줄. CTA 바로 아래에 크게 둔다. #}
+      <div class="install" data-reveal>
+        <code>curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh</code>
+        <button class="inst-copy" type="button" data-copy-text="curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh"
+                aria-label="{{ t("copy") }}" data-copied="{{ t("copied") }}">
+          <svg class="i-copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <svg class="i-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </button>
+      </div>
+      <p class="install-alt" data-reveal>{{ page.extra.install_alt }} <code class="inline">cargo install --git https://github.com/sqzer-x/sqzass</code></p>
       <div class="lede" data-reveal>
         {{ page.content | safe }}
       </div>
@@ -115,36 +125,17 @@
           <p class="tile-link"><a href="{{ home }}benchmark/">{{ page.extra.bench_more }}</a></p>
         </article>
 
-        <article class="tile t-install" data-reveal>
-          <h2>{{ page.extra.install_title }}</h2>
-          <div class="install">
-            <code>curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh</code>
-            <button class="inst-copy" type="button" data-copy-text="curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh"
-                    aria-label="{{ t("copy") }}" data-copied="{{ t("copied") }}">
-              <svg class="i-copy" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              <svg class="i-check" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-            </button>
-          </div>
-          <p class="note">{{ page.extra.install_alt }} <code class="inline">cargo install --git https://github.com/sqzer-x/sqzass</code></p>
-        </article>
-
         <article class="tile t-zero" data-reveal>
           <p class="zero-num">0</p>
           <p class="note">{{ page.extra.zero_label }}</p>
         </article>
 
         {%- for f in page.extra.features %}
-        <article class="tile" data-reveal>
+        <article class="tile{% if loop.last %} t-wide{% endif %}" data-reveal>
           <h2>{{ f.title }}</h2>
           <p class="note">{{ f.body }}</p>
         </article>
         {%- endfor %}
-
-        <article class="tile t-demo" data-reveal>
-          <h2>{{ page.extra.demo_title }}</h2>
-          <p class="note">{{ page.extra.demo_body }}</p>
-          <p class="tile-link"><a href="{{ home }}start/">{{ t("documentation") }} →</a></p>
-        </article>
 
       </div>
     </div>
@@ -162,7 +153,7 @@
         <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
         {%- endfor %}
       </nav>
-      <p>{{ page.extra.built_line }} · MIT</p>
+      <p>MIT</p>
     </div>
   </footer>
 </main>

@@ -282,8 +282,7 @@ main { display: block; }
 .tile-link { margin: 1.1rem 0 0; font-weight: 700; font-size: 0.95rem; }
 
 .t-bench { grid-column: span 2; grid-row: span 2; }
-.t-install { grid-column: span 2; }
-.t-demo { grid-column: span 2; }
+.t-wide { grid-column: span 2; }
 
 /* 벤치마크 타일 */
 .t-bench .note { margin-bottom: 1.4rem; }
@@ -325,25 +324,29 @@ main { display: block; }
   color: transparent;
 }
 
-/* 설치 타일 */
+/* 설치 한 줄 — 페이지에서 제일 중요한 것. CTA 바로 아래에서 눈에 띈다. */
 .install {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  gap: 0.4rem;
+  max-width: 100%;
+  border: 1px solid rgba(255, 140, 90, 0.45);
+  border-radius: 13px;
   background: var(--bg-hi);
-  padding: 0.55rem 0.45rem 0.55rem 0.9rem;
-  margin: 0.2rem 0 0.9rem;
+  box-shadow: 0 4px 22px rgba(255, 110, 60, 0.16);
+  padding: 0.72rem 0.55rem 0.72rem 1.05rem;
+  margin: 1.6rem 0 0;
 }
 .install > code {
   font-family: var(--mono);
-  font-size: 0.82rem;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--accent-ink);
   white-space: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
 }
+.install-alt { margin: 0.7rem 0 0; font-size: 0.9rem; color: var(--muted); }
 .inline { font-family: var(--mono); font-size: 0.85em; color: var(--accent-ink); }
 .inst-copy {
   flex: none;
