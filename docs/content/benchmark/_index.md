@@ -5,15 +5,6 @@ weight = 60
 toc = true
 +++
 
-The same 1,000-page site, built cold by five generators on the same machine.
-Lower is better. The sqzass numbers include everything it emits by default —
-search index, sitemap, robots.txt, llms.txt — which none of the others build.
-
-Numbers are medians of three cold runs on one specific machine. Ratios travel
-better than milliseconds; the generator and harness are in
-[`bench/`](https://github.com/sqzer-x/sqzass/tree/main/bench), so run them on
-yours.
-
 ## minimal — a heading and a paragraph
 
 <div class="bench">
@@ -93,12 +84,3 @@ hidden the thing that produced it.
 - **Astro's time includes Node startup** (~1 s). It is also doing more than
   markdown-to-HTML — it is a component framework. That is the honest caveat;
   the corpus is plain markdown, which is the workload this page is about.
-
-## What this page does not claim
-
-Your machine will produce different milliseconds. Incremental builds and dev
-servers are not measured. Feature scopes differ — this measures one thing:
-turning a directory of markdown into a directory of HTML, cold, with the
-defaults each tool ships. The definitions above and the scripts in
-[`bench/`](https://github.com/sqzer-x/sqzass/tree/main/bench) are the whole
-methodology; if a number looks wrong, run it.
