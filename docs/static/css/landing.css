@@ -253,7 +253,7 @@ section, .foot { padding-inline: clamp(1.25rem, 4vw, 2.5rem); }
 /* ── 퀵스타트 ── */
 .steps {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1.1rem;
   margin: 2rem 0 0;
 }
@@ -261,6 +261,7 @@ section, .foot { padding-inline: clamp(1.25rem, 4vw, 2.5rem); }
    0으로 눌러야 pre의 overflow-x가 일을 한다. */
 .step { min-width: 0; }
 .step h3 { margin: 0 0 0.7rem; font-size: 1.02rem; font-weight: 700; }
+.step pre + pre { margin-top: 0.6rem; }
 .step pre {
   margin: 0;
   background: var(--code-bg);

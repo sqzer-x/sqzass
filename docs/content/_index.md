@@ -20,13 +20,12 @@ features_title = "What you get"
 features_more = "Everything else is in the documentation →"
 
 quick_title = "Quick start"
-quick_install = "Install the release binary"
+quick_install = "Install — either line works"
 quick_use = "Make a site"
-quick_note = "macOS arm64 builds and building from source are covered in"
+quick_note = "The script detects your platform and verifies checksums; the cargo line builds from source. More options are in"
 quick_note_link = "the install guide."
 
 foot_benchmark = "Benchmark"
-status_line = "v0.1.0 — early, and honest about it. No theme system yet."
 built_line = "This site is built by sqzass itself — the docs are the demo."
 
 [[extra.bench]]

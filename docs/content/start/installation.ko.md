@@ -1,12 +1,31 @@
 +++
 title = "설치"
-description = "소스에서 sqzass를 빌드합니다"
+description = "한 줄로, 미리 빌드된 바이너리로, 소스에서"
 weight = 10
 toc = true
 +++
 
 sqzass는 런타임 의존성이 없는 단일 바이너리입니다. Node도, Python도, 시스템
 라이브러리도 필요 없습니다.
+
+## 한 줄
+
+```bash
+curl -fsSL https://sqzass.sqzer.com/install.sh | sh
+```
+
+스크립트가 하는 일은 정확히 넷이고, 실행 전에 [직접 읽어볼](/install.sh) 수
+있습니다: 플랫폼 판별(Linux x86_64 또는 Apple Silicon macOS), 최신 릴리스
+타르볼과 `.sha256` 다운로드, 체크섬 검증, `/usr/local/bin`에 `install` — sudo는
+그 디렉터리에 쓸 수 없을 때만 묻습니다. 다른 곳에 설치하려면
+`SQZASS_INSTALL_DIR`을 주세요. 그 밖의 일은 하지 않습니다 — 셸 설정도, `PATH`도
+건드리지 않습니다.
+
+Rust가 있다면 한 줄로 소스 빌드도 됩니다:
+
+```bash
+cargo install --git https://github.com/sqzer-x/sqzass
+```
 
 ## 소스에서 빌드
 

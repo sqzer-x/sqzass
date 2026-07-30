@@ -1,12 +1,31 @@
 +++
 title = "Installation"
-description = "Build sqzass from source"
+description = "One line, a prebuilt binary, or from source"
 weight = 10
 toc = true
 +++
 
 sqzass is a single binary with no runtime dependencies. No Node, no Python, no
 system libraries.
+
+## One line
+
+```bash
+curl -fsSL https://sqzass.sqzer.com/install.sh | sh
+```
+
+The script does exactly four things, and you can [read it](/install.sh) first:
+detect the platform (Linux x86_64 or Apple-silicon macOS), download the latest
+release tarball with its `.sha256`, verify the checksum, and `install` the
+binary into `/usr/local/bin` — asking for sudo only if that directory is not
+writable. Set `SQZASS_INSTALL_DIR` to install somewhere else. It touches
+nothing else: no shell config, no `PATH` edits.
+
+With Rust installed, one line also builds from source:
+
+```bash
+cargo install --git https://github.com/sqzer-x/sqzass
+```
 
 ## From source
 

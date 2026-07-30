@@ -20,13 +20,12 @@ features_title = "기본으로 얻는 것"
 features_more = "나머지는 문서에 있습니다 →"
 
 quick_title = "빠른 시작"
-quick_install = "릴리스 바이너리 설치"
+quick_install = "설치 — 어느 줄이든 한 줄로 끝납니다"
 quick_use = "사이트 만들기"
-quick_note = "macOS arm64 빌드와 소스 빌드는"
+quick_note = "스크립트는 플랫폼을 판별하고 체크섬을 검증하며, cargo 줄은 소스에서 빌드합니다. 다른 방법은"
 quick_note_link = "설치 안내에 있습니다."
 
 foot_benchmark = "벤치마크"
-status_line = "v0.1.0 — 초기 단계이고, 그 점을 숨기지 않습니다. 테마 시스템은 아직 없습니다."
 built_line = "이 사이트도 sqzass가 빌드했습니다 — 문서가 곧 데모입니다."
 
 [[extra.bench]]

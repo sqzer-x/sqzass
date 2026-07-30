@@ -121,14 +121,12 @@
       <div class="steps">
         <div class="step" data-reveal>
           <h3>{{ page.extra.quick_install }}</h3>
-          <pre><code>curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-v0.1.0-x86_64-unknown-linux-musl.tar.gz
-tar xzf sqzass-*.tar.gz
-sudo install -m755 sqzass-*/sqzass /usr/local/bin/</code></pre>
+          <pre><code>curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh</code></pre>
+          <pre><code>cargo install --git https://github.com/sqzer-x/sqzass</code></pre>
         </div>
         <div class="step" data-reveal>
           <h3>{{ page.extra.quick_use }}</h3>
-          <pre><code>sqzass init my-site
-sqzass serve -i my-site</code></pre>
+          <pre><code>sqzass init my-site &amp;&amp; sqzass serve -i my-site</code></pre>
         </div>
       </div>
       <p class="quick-note" data-reveal>{{ page.extra.quick_note }} <a href="{{ home }}start/installation/">{{ page.extra.quick_note_link }}</a></p>
@@ -147,7 +145,6 @@ sqzass serve -i my-site</code></pre>
         <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
         {%- endfor %}
       </nav>
-      <p>{{ page.extra.status_line }}</p>
       <p>{{ page.extra.built_line }} · MIT</p>
     </div>
   </footer>
