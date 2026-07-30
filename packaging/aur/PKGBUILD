@@ -8,8 +8,12 @@ url='https://github.com/sqzer-x/sqzass'
 license=('MIT')
 depends=('gcc-libs')
 makedepends=('cargo')
+# makepkg의 lto 옵션은 CFLAGS에 -flto를 넣어 onig_sys의 C 오브젝트를 GCC LTO
+# 비트코드로 만드는데, rustc의 링커(lld)는 그걸 못 읽어 onig_* 심볼이 전부
+# undefined가 된다. C 의존이 있는 Rust 패키지의 표준 처방이다.
+options=(!lto)
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')  # 태그를 붙인 뒤 `updpkgsums`로 채운다
+sha256sums=('a68262010c3e4b8ada884edaa174025d1b605376be26673ea6d44c926cee3dc9')
 
 prepare() {
   cd "$pkgname-$pkgver"
