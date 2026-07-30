@@ -10,6 +10,7 @@ hero_title_a = "One thousand pages."
 hero_title_b = "Twenty-five milliseconds."
 hero_sub = "sqzass builds fast and proves it: five generators, one machine, one corpus, method published. The output is correct on any host."
 cta_start = "Get started"
+cta_github = "View on GitHub"
 
 bench_title = "Measured, not claimed"
 bench_note = "Each row compares sqzass with Hugo, the fastest of the four generators we measured — same machine, cold builds, median of three. Bars are to scale within each row, and the sqzass times include building the search index, sitemap and llms.txt."

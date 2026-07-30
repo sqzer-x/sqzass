@@ -10,6 +10,7 @@ hero_title_a = "천 페이지,"
 hero_title_b = "25밀리초."
 hero_sub = "sqzass는 빠르고, 그걸 증명합니다: 생성기 다섯을 같은 머신, 같은 코퍼스로 재고 방법을 공개했습니다. 출력물은 어느 호스트에서든 그대로 동작합니다."
 cta_start = "시작하기"
+cta_github = "GitHub에서 보기"
 
 bench_title = "주장이 아니라 측정입니다"
 bench_note = "각 줄은 우리가 잰 네 생성기 중 가장 빠른 Hugo와 비교합니다 — 같은 머신, 콜드 빌드, 3회 중앙값. 막대는 줄 안에서 실척이고, sqzass 시간에는 검색 색인·sitemap·llms.txt 생성이 포함돼 있습니다."
