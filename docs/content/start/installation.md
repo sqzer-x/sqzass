@@ -27,6 +27,18 @@ With Rust installed, one line also builds from source:
 cargo install --git https://github.com/sqzer-x/sqzass
 ```
 
+## Arch Linux
+
+[`sqzass`](https://aur.archlinux.org/packages/sqzass) is in the AUR, built from
+the release tag:
+
+```bash
+paru -S sqzass          # or yay, or makepkg -si on a clone
+```
+
+There is no `sqzass-bin`. Building a Rust tool from source is normal on Arch,
+and two packages would only raise the question of which one is current.
+
 ## From source
 
 ```bash

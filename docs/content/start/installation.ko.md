@@ -27,6 +27,18 @@ Rust가 있다면 한 줄로 소스 빌드도 됩니다:
 cargo install --git https://github.com/sqzer-x/sqzass
 ```
 
+## Arch Linux
+
+AUR에 [`sqzass`](https://aur.archlinux.org/packages/sqzass)가 있습니다. 릴리스
+태그에서 빌드합니다.
+
+```bash
+paru -S sqzass          # yay도, 클론해서 makepkg -si도 됩니다
+```
+
+`sqzass-bin`은 만들지 않았습니다. Arch에서 Rust 도구를 소스에서 빌드하는 건
+정상이고, 패키지가 둘이면 어느 쪽이 최신인지 묻는 일만 생깁니다.
+
 ## 소스에서 빌드
 
 ```bash
