@@ -40,16 +40,18 @@
   });
 
   var M = window.Motion;
-  if (!M || !M.animate || !M.inView) return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
+  var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 한 번만 판정한다. 도중에 바뀌면 Motion이 관리하던 transform과 우리가 직접
+     쓴 transform이 한 엘리먼트에서 섞이는데, 그 상태는 새로고침이 고친다. */
+  var CAN_ANIMATE = !!(M && M.animate) && !REDUCED;
   var EASE = [0.16, 1, 0.3, 1];
 
   /* 설치 채널 전환.
 
-     선택 자체는 radio + CSS가 이미 하고 있다. 여기서 더하는 건 두 가지뿐이다 —
-     선택을 따라 미끄러지는 표시자와, 명령이 바뀔 때의 squeeze. 둘 다 없어도
-     기능은 그대로다(is-enhanced를 붙이기 전까지 CSS 배경이 선택을 나타낸다).
+     선택 자체는 radio + CSS가 이미 하고 있다. 표시자는 그 위에 얹는 것이지만
+     **연출이 아니라 상태 표시**다 — 어느 탭이 선택됐는지를 말한다. 그래서
+     reduced-motion이거나 Motion이 아예 없어도 제자리는 찾아가야 하고, 빠지는
+     것은 미끄러짐과 squeeze뿐이다.
 
      squeeze는 장식이 아니라 이 제품의 동작이다. 히어로의 강조 줄이 옆으로
      눌려 들어오는 것과 같은 스프링을 쓴다. */
@@ -60,26 +62,35 @@
     var radios = [].slice.call(install.querySelectorAll(".pick-in"));
     var panels = [].slice.call(install.querySelectorAll(".pick-panel"));
 
-    var place = function (animated) {
-      var i = radios.findIndex(function (r) { return r.checked; });
-      if (i < 0) return;
-      var tab = tabs[i];
-      var x = tab.offsetLeft;
-      var w = tab.offsetWidth;
+    /* 위치를 잡는 두 경로. 한 엘리먼트에 둘을 섞지 않는다 — Motion은 transform을
+       자기 방식으로 조립하므로, 직접 쓴 transform과 번갈아 쓰면 어긋난다. */
+    var put = function (x, w, animated) {
+      if (!CAN_ANIMATE) {
+        marker.style.width = w + "px";
+        marker.style.transform = "translateX(" + x + "px)";
+        return;
+      }
       /* x와 scaleX를 따로 준다. transform 문자열을 두 번 애니메이션하면 뒤엣것이
          앞엣것을 덮어 이동이 사라진다. */
       if (!animated) {
         M.animate(marker, { width: w + "px", x: x, scaleX: 1 }, { duration: 0 });
-        install.classList.add("is-enhanced");
         return;
       }
       /* 이동하는 동안 눌렸다 펴진다. */
       M.animate(marker, { width: w + "px", x: x }, { duration: 0.34, ease: EASE });
       M.animate(marker, { scaleX: [0.72, 1] },
         { type: "spring", stiffness: 260, damping: 18 });
+    };
 
-      M.animate(panels[i], { opacity: [0, 1], scaleX: [1.05, 1] },
-        { type: "spring", stiffness: 240, damping: 22 });
+    var place = function (animated) {
+      var i = radios.findIndex(function (r) { return r.checked; });
+      if (i < 0) return;
+      put(tabs[i].offsetLeft, tabs[i].offsetWidth, animated);
+      install.classList.add("is-enhanced");
+      if (animated && CAN_ANIMATE) {
+        M.animate(panels[i], { opacity: [0, 1], scaleX: [1.05, 1] },
+          { type: "spring", stiffness: 240, damping: 22 });
+      }
     };
 
     place(false);
@@ -92,6 +103,10 @@
     }
     window.addEventListener("resize", function () { place(false); });
   }
+
+  /* 여기부터는 순수한 연출이다. 없어도 페이지는 완성 상태이므로, Motion이
+     없거나 사용자가 모션을 줄여 달라고 했으면 여기서 끝낸다. */
+  if (!CAN_ANIMATE || !M.inView) return;
 
   /* 히어로 로드 시퀀스 */
   var heroEls = document.querySelectorAll(".hero [data-reveal]");
