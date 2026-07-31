@@ -1,6 +1,6 @@
 +++
 title = "Features"
-description = "Highlighting, search, and the development server"
+description = "Highlighting, search, feeds, and the development server"
 weight = 40
 sort_by = "weight"
 +++

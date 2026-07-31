@@ -1,7 +1,7 @@
 +++
 title = "피드"
 description = "front matter에 적은 날짜로 만들어지는 언어별 Atom 피드"
-weight = 25
+weight = 30
 toc = true
 +++
 

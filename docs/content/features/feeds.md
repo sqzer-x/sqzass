@@ -1,7 +1,7 @@
 +++
 title = "Feeds"
 description = "One Atom feed per language, from the dates you put in front matter"
-weight = 25
+weight = 30
 toc = true
 +++
 

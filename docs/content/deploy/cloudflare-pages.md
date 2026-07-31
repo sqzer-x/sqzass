@@ -43,7 +43,8 @@ Put the file in `static/` and it is copied through untouched.
 
 ## Redirects
 
-`_redirects` works the same way, but reach for `aliases` in front matter first:
+`_redirects` works the same way, but reach for [`aliases`](@/content/front-matter.md)
+in front matter first:
 it lives next to the page that moved, it is checked at build time, and it
 follows the page to whatever host you use next.
 

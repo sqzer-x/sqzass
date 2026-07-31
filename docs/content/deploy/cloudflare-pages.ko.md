@@ -42,7 +42,8 @@ Cloudflare Pages는 `_headers` 파일을 읽으므로, 콘텐츠 해시가 붙�
 
 ## 리다이렉트
 
-`_redirects`도 같은 방식으로 동작하지만, front matter의 `aliases`를 먼저 보세요.
+`_redirects`도 같은 방식으로 동작하지만, front matter의
+[`aliases`](@/content/front-matter.md)를 먼저 보세요.
 옮겨진 페이지 바로 옆에 있고, 빌드가 검사하며, 다음에 어떤 호스트로 가든 따라옵니다.
 
 ## 프리뷰 배포

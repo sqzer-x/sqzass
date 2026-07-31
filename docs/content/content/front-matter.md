@@ -30,7 +30,8 @@ title = "Installation"
 | `slug` | string | filename stem | The last URL segment. |
 | `template` | string | — | Render with this template instead of the usual one. |
 | `toc` | bool | `false` | Whether a table of contents should be shown. |
-| `translation_key` | string | see below | Links this page to its translations. |
+| `translation_key` | string | the path minus the language suffix | Links this page to its translations. See [Languages](@/content/languages.md). |
+| `aliases` | array of strings | `[]` | Old URLs that should land here. Each one must be a root-absolute path, and each gets a redirect stub in the output. |
 | `extra` | table | `{}` | Anything you want. Reaches templates as `page.extra`. |
 
 `toc` is the author's intent, not the data: the table of contents is collected

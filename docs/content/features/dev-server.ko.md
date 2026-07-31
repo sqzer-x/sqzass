@@ -1,7 +1,7 @@
 +++
 title = "개발 서버"
 description = "메모리에서 서빙하고, 바뀌면 다시 빌드하고, 보던 자리를 잃지 않고 새로고침합니다"
-weight = 30
+weight = 40
 toc = true
 +++
 

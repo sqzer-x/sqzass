@@ -1,6 +1,6 @@
 +++
 title = "기능"
-description = "구문 강조, 검색, 개발 서버"
+description = "구문 강조, 검색, 피드, 개발 서버"
 weight = 40
 sort_by = "weight"
 +++
