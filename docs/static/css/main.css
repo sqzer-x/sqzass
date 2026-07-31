@@ -771,15 +771,6 @@ h4:hover > .anchor, h5:hover > .anchor, h6:hover > .anchor,
 }
 .colophon a:hover { color: var(--accent); text-decoration: underline; }
 
-/* 구분선은 푸터 전체를 가로지른다. max-width를 주면 선이 문장 길이에서 끊겨
-   구분이 아니라 밑줄로 읽힌다. */
-.colophon-note {
-  margin: 2.5rem 0 0;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
-  color: var(--ink-3);
-}
-
 /* ---------- Korean ----------
    Three Latin devices do not survive contact with Hangul:
 

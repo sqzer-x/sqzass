@@ -412,12 +412,6 @@ main { display: block; }
 .colophon li + li { margin-top: 0.4rem; }
 .colophon a { color: var(--muted); transition: color 0.14s ease; }
 .colophon a:hover { color: var(--accent-ink); text-decoration: underline; }
-.colophon-note {
-  margin: 2.5rem 0 0;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-}
 
 /* ── 한국어: 자간·모노·대문자 장치를 한글에 적용하지 않는다 ── */
 html[lang="ko"] .display { letter-spacing: 0; }
