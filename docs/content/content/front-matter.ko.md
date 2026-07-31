@@ -1,5 +1,5 @@
 +++
-title = "front matter"
+title = "Front matter"
 description = "페이지가 가질 수 있는 모든 필드와 그 역할"
 weight = 10
 toc = true

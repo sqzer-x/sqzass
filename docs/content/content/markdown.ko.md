@@ -20,9 +20,9 @@ cjk_friendly_emphasis = true
 heading_anchors       = "right"   # none | left | right
 ```
 
-## 알림 상자
+## 콜아웃
 
-인용문 위에 얹힌 GitHub의 콜아웃 문법입니다.
+인용문 위에 얹힌 GitHub의 콜아웃 문법입니다. 설정 키는 `alerts`입니다.
 
 ```markdown
 > [!NOTE]
@@ -70,9 +70,9 @@ heading_anchors       = "right"   # none | left | right
 
 ## 제목
 
-모든 제목에 `id`가 붙습니다. anchor를 보여주든 말든 붙는데, 목차와 남에게
+모든 제목에 `id`가 붙습니다. 앵커를 보여주든 말든 붙는데, 목차와 남에게
 건네는 딥링크가 둘 다 여기에 기대기 때문입니다. 같은 제목이 반복되면 `-1`, `-2`가
-붙고, anchor와 목차 항목은 반드시 일치합니다. 한 번의 순회에서 같은 카운터로
+붙고, 앵커와 목차 항목은 반드시 일치합니다. 한 번의 순회에서 같은 카운터로
 만들어지니까요.
 
 `heading_anchors`는 눈에 보이는 `#` 링크를 정합니다. `"right"`(기본), `"left"`,
