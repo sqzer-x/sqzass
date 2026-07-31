@@ -658,11 +658,22 @@ pub(crate) fn select_template(page: &Page, site: &Site, templates: &Templates) -
         return Ok("section.html".into());
     }
 
+    // 없는 이름은 front matter `template`과 똑같이 에러다. 조용히 page.html로
+    // 떨어뜨리면 섹션 하나가 통째로 잘못된 템플릿으로 렌더되고, 그걸 알아채는
+    // 자리는 빌드가 아니라 브라우저다.
     if !page.is_section
         && let Some(pt) = site.page_template_for(page)
-        && templates.has(pt)
     {
-        return Ok(pt.to_string());
+        if templates.has(pt) {
+            return Ok(pt.to_string());
+        }
+        anyhow::bail!(
+            "{}: 섹션이 page_template = \"{}\"를 가리키는데 그런 템플릿이 없습니다.\n\
+             사용 가능한 템플릿: {}",
+            page.source.display(),
+            pt,
+            templates.names().join(", ")
+        );
     }
 
     let candidate = if page.is_section {
@@ -779,6 +790,47 @@ mod search_toggle_tests {
             out.files.get(&search::path("en")).map(Vec::as_slice),
             Some(b"{\"handmade\":true}".as_slice()),
             "생성 색인이 static/ 파일을 덮었다"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod template_selection_tests {
+    use super::*;
+
+    /// 없는 `page_template`은 front matter `template`과 똑같이 빌드를 멈춰야 한다.
+    /// 조용히 `page.html`로 떨어지면 섹션 하나가 통째로 잘못된 템플릿으로 나가고,
+    /// 빌드는 성공했다고 말한다.
+    #[test]
+    fn a_page_template_naming_nothing_stops_the_build() {
+        let dir = std::env::temp_dir().join(format!("sqzass-pt-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        init::init(&dir).unwrap();
+        std::fs::create_dir_all(dir.join("content/blog")).unwrap();
+        std::fs::write(
+            dir.join("content/blog/_index.md"),
+            "+++\ntitle = \"Blog\"\npage_template = \"nope.html\"\n+++\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("content/blog/post.md"),
+            "+++\ntitle = \"Post\"\n+++\n",
+        )
+        .unwrap();
+
+        let err = build_to_memory(&BuildOptions {
+            input: dir.clone(),
+            output: None,
+            drafts: false,
+            base_url: None,
+            profile: false,
+        })
+        .unwrap_err();
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("nope.html"),
+            "에러가 없는 이름을 짚어야 한다: {msg}"
         );
         let _ = std::fs::remove_dir_all(&dir);
     }
