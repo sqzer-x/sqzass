@@ -141,21 +141,8 @@
     </div>
   </section>
 
-  <footer class="foot">
-    <div class="inner foot-in">
-      <nav class="foot-nav">
-        <a href="{{ home }}start/">{{ t("documentation") }}</a>
-        <a href="{{ home }}benchmark/">{{ page.extra.foot_benchmark }}</a>
-        <a href="https://github.com/sqzer-x/sqzass/releases">{{ t("footer_releases") }}</a>
-        <a href="https://github.com/sqzer-x/sqzass/issues">{{ t("footer_issues") }}</a>
-        <a href="https://github.com/sqzer-x/sqzass">GitHub</a>
-        {%- for lang in page.translations %}
-        <a href="{{ lang.url }}" hreflang="{{ lang.code }}">{{ lang.name }}</a>
-        {%- endfor %}
-      </nav>
-      <p>{{ page.extra.foot_line }} · MIT</p>
-    </div>
-  </footer>
 </main>
+
+{%- include "partials/colophon.html" %}
 </body>
 </html>

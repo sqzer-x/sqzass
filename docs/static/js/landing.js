@@ -60,7 +60,7 @@
   }
 
   /* 벤토 타일: 뷰포트에 들어올 때 한 번씩 */
-  document.querySelectorAll(".bento-wrap [data-reveal], .foot [data-reveal]").forEach(function (el) {
+  document.querySelectorAll(".bento-wrap [data-reveal]").forEach(function (el) {
     el.style.opacity = "0";
     M.inView(
       el,

@@ -367,17 +367,62 @@ main { display: block; }
 .inst-copy.is-done .i-copy { display: none; }
 .inst-copy.is-done .i-check { display: block; color: var(--accent-ink); }
 
-/* ── 푸터 ── */
-.foot { border-top: 1px solid var(--line); padding-block: 2.4rem 3.2rem; }
-.foot-in { display: grid; gap: 1rem; }
-.foot-nav { display: flex; flex-wrap: wrap; gap: 1.35rem; font-weight: 600; font-size: 0.92rem; }
-.foot-nav a { color: var(--muted); }
-.foot-nav a:hover { color: var(--accent-ink); text-decoration: none; }
-.foot p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+/* ── 푸터 — docs와 같은 colophon. 마크업은 partials/colophon.html 하나를
+   양쪽이 include하고, 여기서는 main.css의 .colophon 블록을 랜딩의 토큰
+   (--line·--text·--muted·--wrap)으로 옮겨 적는다. 값의 근거는 main.css 쪽
+   주석에 있다. docs의 회색 두 단(ink-2/ink-3)은 랜딩엔 --muted 하나라
+   한 단으로 눕는다. */
+.colophon {
+  border-top: 1px solid var(--line);
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 2.5rem clamp(1.25rem, 4vw, 2.5rem) 3.5rem;
+  font-size: 0.8125rem;
+}
+.colophon-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) repeat(2, minmax(0, 9rem));
+  justify-content: start;
+  gap: clamp(1.5rem, 5vw, 4rem);
+}
+.colophon-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--muted);
+}
+.colophon-mark:hover { color: var(--text); text-decoration: none; }
+.colophon-brand img { width: 1.7rem; height: 1.7rem; opacity: 0.6; }
+:root[data-theme="dark"] .colophon-brand img { filter: invert(1); }
+.colophon-brand p { margin: 0.6rem 0 0; max-width: 24rem; color: var(--muted); line-height: 1.6; }
+.colophon h2 {
+  margin: 0 0 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.colophon ul { list-style: none; margin: 0; padding: 0; }
+.colophon li + li { margin-top: 0.4rem; }
+.colophon a { color: var(--muted); transition: color 0.14s ease; }
+.colophon a:hover { color: var(--accent-ink); text-decoration: underline; }
+.colophon-note {
+  margin: 2.5rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
 
 /* ── 한국어: 자간·모노·대문자 장치를 한글에 적용하지 않는다 ── */
 html[lang="ko"] .display { letter-spacing: 0; }
 html[lang="ko"] .kicker { font-family: var(--sans); font-size: 0.85rem; }
+html[lang="ko"] .colophon h2 { font-family: var(--sans); letter-spacing: -0.01em; text-transform: none; }
 html[lang="ko"] h1, html[lang="ko"] h2, html[lang="ko"] h3 { word-break: keep-all; }
 html[lang="ko"] .sub, html[lang="ko"] .note { word-break: keep-all; }
 
@@ -386,6 +431,7 @@ html[lang="ko"] .sub, html[lang="ko"] .note { word-break: keep-all; }
   .bento { grid-template-columns: repeat(2, 1fr); }
   .t-bench { grid-column: span 2; }
   .nav-links > a:first-child { display: none; }
+  .colophon-grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
 }
 @media (max-width: 42rem) {
   .bento { grid-template-columns: 1fr; }
