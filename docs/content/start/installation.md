@@ -35,7 +35,7 @@ cargo install --git https://github.com/sqzer-x/sqzass
 the release tag:
 
 ```bash
-paru -S sqzass          # or yay, or makepkg -si on a clone
+yay -S sqzass          # or paru, or makepkg -si on a clone
 ```
 
 There is no `sqzass-bin`. Building a Rust tool from source is normal on Arch,

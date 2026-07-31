@@ -35,7 +35,7 @@ AUR에 [`sqzass`](https://aur.archlinux.org/packages/sqzass)가 있습니다. �
 태그에서 빌드합니다.
 
 ```bash
-paru -S sqzass          # yay도, 클론해서 makepkg -si도 됩니다
+yay -S sqzass          # paru도, 클론해서 makepkg -si도 됩니다
 ```
 
 `sqzass-bin`은 만들지 않았습니다. Arch에서 Rust 도구를 소스에서 빌드하는 건

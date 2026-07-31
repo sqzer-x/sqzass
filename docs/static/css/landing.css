@@ -325,19 +325,80 @@ main { display: block; }
 }
 
 /* 설치 한 줄 — 페이지에서 제일 중요한 것. CTA 바로 아래에서 눈에 띈다. */
+/* 채널 선택 + 명령. fieldset이라 기본 테두리·여백을 먼저 지운다.
+   align-items: flex-start라서 탭 행도 명령 상자도 제 내용만큼만 넓어진다. */
 .install {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 100%;
+  border: 0;
+  padding: 0;
+  margin: 1.6rem 0 0;
+  min-width: 0;
+}
+.pick-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pick-in {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.pick-tab {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1;
+  color: var(--muted);
+  padding: 0.42rem 0.72rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.pick-tab:hover { color: var(--ink); border-color: var(--ink-3); }
+.pick-in:checked + .pick-tab {
+  color: var(--accent-ink);
+  border-color: rgba(255, 140, 90, 0.55);
+  background: rgba(255, 120, 70, 0.1);
+}
+/* 라디오가 화면에 없으므로 포커스 링은 라벨이 받는다. 없으면 키보드로 못 쓴다. */
+.pick-in:focus-visible + .pick-tab {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pick-panel {
+  display: none;
   align-items: center;
   gap: 0.4rem;
+  min-width: 0;
   max-width: 100%;
   border: 1px solid rgba(255, 140, 90, 0.45);
   border-radius: 13px;
   background: var(--bg-hi);
   box-shadow: 0 4px 22px rgba(255, 110, 60, 0.16);
   padding: 0.72rem 0.55rem 0.72rem 1.05rem;
-  margin: 1.6rem 0 0;
 }
-.install > code {
+/* 패널만 따로 감싼 건 `nth-child`를 정확히 세기 위해서다. fieldset 바로 아래에
+   두면 legend와 탭 행까지 형제로 세어 한 칸씩 밀린다 — 실제로 그렇게 밀려서
+   AUR 탭에 cargo 명령이 나왔다.
+
+   첫 패널이 기본이다. `:has()`를 모르는 브라우저에서도 curl 명령은 그대로
+   보이고 탭만 안 먹는다 — 이 페이지에서 가장 중요한 내용이 사라지면 안 된다.
+   채널이 셋인 건 packaging/README.md의 결정이고, 늘리면 여기도 는다. */
+.pick-panels { min-width: 0; max-width: 100%; }
+.pick-panel:first-child { display: flex; }
+.install:has(#inst-2:checked) .pick-panel { display: none; }
+.install:has(#inst-2:checked) .pick-panel:nth-child(2) { display: flex; }
+.install:has(#inst-3:checked) .pick-panel { display: none; }
+.install:has(#inst-3:checked) .pick-panel:nth-child(3) { display: flex; }
+
+.install-note { margin: 0.7rem 0 0; font-size: 0.82rem; color: var(--muted); }
+
+.pick-panel > code {
   font-family: var(--mono);
   font-size: 0.92rem;
   font-weight: 700;
@@ -346,11 +407,18 @@ main { display: block; }
   overflow-x: auto;
   scrollbar-width: none;
 }
-.install-alt { margin: 0.7rem 0 0; font-size: 0.9rem; color: var(--muted); }
-/* 좁은 화면에서는 두 대안이 각자 줄을 갖도록 구분자에서 끊는다. */
-.alt-sep { margin: 0 0.35rem; opacity: 0.55; }
-@media (max-width: 34rem) {
-  .alt-sep { display: block; height: 0; margin: 0.35rem 0 0; overflow: hidden; }
+/* 화면에서는 안 보이고 스크린리더에는 읽히는 것. fieldset의 legend가 그렇다 —
+   눈으로는 버튼 행 자체가 무엇을 고르는지 말해 주지만, 소리로는 아니다. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .inline { font-family: var(--mono); font-size: 0.85em; color: var(--accent-ink); }
 .inst-copy {

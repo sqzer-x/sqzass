@@ -80,22 +80,35 @@
         <a class="btn btn-primary" href="{{ home }}start/">{{ page.extra.cta_start }}</a>
         <a class="btn btn-ghost" href="https://github.com/sqzer-x/sqzass">{{ page.extra.cta_github }}</a>
       </p>
-      {#- 제일 중요한 것: 설치 한 줄. CTA 바로 아래에 크게 둔다. #}
-      <div class="install" data-reveal>
-        <code>curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh</code>
-        <button class="inst-copy" type="button" data-copy-text="curl -fsSL {{ site.origin }}{{ site.base_path }}/install.sh | sh"
-                aria-label="{{ t("copy") }}" data-copied="{{ t("copied") }}">
-          <svg class="i-copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-          <svg class="i-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-        </button>
-      </div>
-      {#- 나머지 두 채널. 큰 블록은 curl 하나로 두고, 여기서 한 줄에 붙인다 —
-          셋을 나란히 크게 놓으면 "무엇을 골라야 하나"가 첫 질문이 된다. #}
-      <p class="install-alt" data-reveal>
-        {{ page.extra.install_alt }} <code class="inline">cargo install --git https://github.com/sqzer-x/sqzass</code>
-        <span class="alt-sep" aria-hidden="true">·</span>
-        {{ page.extra.install_aur }} <code class="inline">paru -S sqzass</code>
-      </p>
+      {#- 제일 중요한 것: 설치 명령. CTA 바로 아래에 크게 둔다.
+
+          채널 전환은 radio + CSS만으로 한다. JS 없이도 세 명령이 전부 DOM에 있고
+          선택이 동작한다 — 이 페이지에서 가장 중요한 내용이 스크립트 로딩에
+          기대면 안 된다. radio를 쓴 건 접근성 때문이기도 하다: 스크린리더가
+          "curl, 라디오 버튼, 선택됨, 3개 중 1"로 읽는 게 이 UI의 실제 의미다. #}
+      <fieldset class="install" data-reveal>
+        <legend class="sr-only">{{ page.extra.install_pick }}</legend>
+        <div class="pick-tabs">
+          {%- for m in page.extra.install %}
+          <input class="pick-in" type="radio" name="install-channel" id="inst-{{ loop.index }}"{% if loop.first %} checked{% endif %}>
+          <label class="pick-tab" for="inst-{{ loop.index }}">{{ m.label }}</label>
+          {%- endfor %}
+        </div>
+        <div class="pick-panels">
+        {%- for m in page.extra.install %}
+        {%- set cmd = m.cmd if m.cmd else "curl -fsSL " ~ site.origin ~ site.base_path ~ "/install.sh | sh" %}
+        <div class="pick-panel">
+          <code>{{ cmd }}</code>
+          <button class="inst-copy" type="button" data-copy-text="{{ cmd }}"
+                  aria-label="{{ t("copy") }}" data-copied="{{ t("copied") }}">
+            <svg class="i-copy" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <svg class="i-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+        </div>
+        {%- endfor %}
+        </div>
+      </fieldset>
+      <p class="install-note" data-reveal>{{ page.extra.install_note }}</p>
       <div class="lede" data-reveal>
         {{ page.content | safe }}
       </div>

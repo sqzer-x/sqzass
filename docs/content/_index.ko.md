@@ -11,8 +11,8 @@ hero_title_b = "25밀리초로 쥐어짭니다."
 hero_sub = "이름 그대로입니다. 사이트 전체를 한 번에 짜냅니다 — Hugo·Zola·Jekyll·Astro와 같은 머신에서 직접 재고, 측정 방법도 전부 공개해 뒀습니다."
 cta_start = "시작하기"
 cta_github = "GitHub에서 보기"
-install_alt = "Rust가 있다면 이렇게도 됩니다:"
-install_aur = "Arch라면:"
+install_pick = "설치 방법"
+install_note = "릴리스마다 체크섬이 붙은 타르볼도 함께 나갑니다 — x86_64·ARM64 리눅스, Apple Silicon macOS."
 
 bento_label = "왜 sqzass인가"
 
@@ -22,6 +22,17 @@ bench_more = "전체 수치와 측정 방법 →"
 zero_label = "같은 입력을 두 번 빌드했을 때 생기는 바이트 차이입니다. push마다 CI가 두 번 빌드해서 비교합니다."
 
 foot_benchmark = "벤치마크"
+
+[[extra.install]]
+label = "curl"
+
+[[extra.install]]
+label = "cargo"
+cmd = "cargo install --git https://github.com/sqzer-x/sqzass"
+
+[[extra.install]]
+label = "AUR"
+cmd = "yay -S sqzass"
 
 [[extra.bench]]
 label = "1,000페이지, 최소 마크다운"

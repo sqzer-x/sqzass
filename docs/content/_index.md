@@ -11,8 +11,8 @@ hero_title_b = "squeezed into 25 ms."
 hero_sub = "The name is the promise: press a whole site out in one go. Measured against Hugo, Zola, Jekyll and Astro on the same machine, with the method published."
 cta_start = "Get started"
 cta_github = "View on GitHub"
-install_alt = "With Rust instead:"
-install_aur = "On Arch:"
+install_pick = "Install with"
+install_note = "Every release also ships tarballs with checksums — Linux on x86_64 and ARM64, and Apple-silicon macOS."
 
 bento_label = "Why sqzass"
 
@@ -22,6 +22,18 @@ bench_more = "Full numbers and methodology →"
 zero_label = "bytes of difference between two builds of the same input — checked in CI on every push"
 
 foot_benchmark = "Benchmark"
+
+[[extra.install]]
+label = "curl"
+# cmd 없음 = 템플릿이 이 사이트의 origin으로 조립한다. 프리뷰 배포에서도 맞는 URL이 나온다.
+
+[[extra.install]]
+label = "cargo"
+cmd = "cargo install --git https://github.com/sqzer-x/sqzass"
+
+[[extra.install]]
+label = "AUR"
+cmd = "yay -S sqzass"
 
 [[extra.bench]]
 label = "1,000 pages, minimal markdown"
