@@ -89,7 +89,13 @@
           <svg class="i-check" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </button>
       </div>
-      <p class="install-alt" data-reveal>{{ page.extra.install_alt }} <code class="inline">cargo install --git https://github.com/sqzer-x/sqzass</code></p>
+      {#- 나머지 두 채널. 큰 블록은 curl 하나로 두고, 여기서 한 줄에 붙인다 —
+          셋을 나란히 크게 놓으면 "무엇을 골라야 하나"가 첫 질문이 된다. #}
+      <p class="install-alt" data-reveal>
+        {{ page.extra.install_alt }} <code class="inline">cargo install --git https://github.com/sqzer-x/sqzass</code>
+        <span class="alt-sep" aria-hidden="true">·</span>
+        {{ page.extra.install_aur }} <code class="inline">paru -S sqzass</code>
+      </p>
       <div class="lede" data-reveal>
         {{ page.content | safe }}
       </div>

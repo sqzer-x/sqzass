@@ -12,7 +12,19 @@ Vercel, Cloudflare Pages, or a plain directory served over HTTP.
 > Atom feeds.
 > The documentation site at <https://sqzass.sqzer.com> is built with it, from
 > `docs/` in this repository, and CI builds that site with the binary it just
-> compiled. There are no prebuilt binaries yet, and no theme system.
+> compiled. There is no theme system yet.
+
+## Install
+
+```bash
+curl -fsSL https://sqzass.sqzer.com/install.sh | sh   # static binary
+cargo install --git https://github.com/sqzer-x/sqzass  # from source
+paru -S sqzass                                         # Arch, from the AUR
+```
+
+Every release also carries the tarballs directly, for Linux on x86_64 and ARM64
+and for Apple-silicon macOS, each with a `.sha256` beside it. Details are in
+[Installation](https://sqzass.sqzer.com/start/installation/).
 
 ## Quick start
 

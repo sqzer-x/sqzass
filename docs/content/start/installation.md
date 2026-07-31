@@ -21,7 +21,9 @@ binary into `/usr/local/bin` — asking for sudo only if that directory is not
 writable. Set `SQZASS_INSTALL_DIR` to install somewhere else. It touches
 nothing else: no shell config, no `PATH` edits.
 
-With Rust installed, one line also builds from source:
+## With Cargo
+
+If you already have Rust, one line builds it from source:
 
 ```bash
 cargo install --git https://github.com/sqzer-x/sqzass

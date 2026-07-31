@@ -21,7 +21,9 @@ curl -fsSL https://sqzass.sqzer.com/install.sh | sh
 `SQZASS_INSTALL_DIR`을 주세요. 그 밖의 일은 하지 않습니다 — 셸 설정도, `PATH`도
 건드리지 않습니다.
 
-Rust가 있다면 한 줄로 소스 빌드도 됩니다:
+## Cargo로
+
+Rust가 이미 있다면 한 줄로 소스에서 빌드합니다.
 
 ```bash
 cargo install --git https://github.com/sqzer-x/sqzass

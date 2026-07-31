@@ -12,6 +12,7 @@ hero_sub = "The name is the promise: press a whole site out in one go. Measured 
 cta_start = "Get started"
 cta_github = "View on GitHub"
 install_alt = "With Rust instead:"
+install_aur = "On Arch:"
 
 bento_label = "Why sqzass"
 

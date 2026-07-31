@@ -347,6 +347,11 @@ main { display: block; }
   scrollbar-width: none;
 }
 .install-alt { margin: 0.7rem 0 0; font-size: 0.9rem; color: var(--muted); }
+/* 좁은 화면에서는 두 대안이 각자 줄을 갖도록 구분자에서 끊는다. */
+.alt-sep { margin: 0 0.35rem; opacity: 0.55; }
+@media (max-width: 34rem) {
+  .alt-sep { display: block; height: 0; margin: 0.35rem 0 0; overflow: hidden; }
+}
 .inline { font-family: var(--mono); font-size: 0.85em; color: var(--accent-ink); }
 .inst-copy {
   flex: none;

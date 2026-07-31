@@ -12,6 +12,7 @@ hero_sub = "이름 그대로입니다. 사이트 전체를 한 번에 짜냅니�
 cta_start = "시작하기"
 cta_github = "GitHub에서 보기"
 install_alt = "Rust가 있다면 이렇게도 됩니다:"
+install_aur = "Arch라면:"
 
 bento_label = "왜 sqzass인가"
 
