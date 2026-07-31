@@ -89,6 +89,9 @@
       <fieldset class="install" data-reveal>
         <legend class="sr-only">{{ page.extra.install_pick }}</legend>
         <div class="pick-tabs">
+          {#- JS가 움직이는 표시자. 스크립트가 없으면 라벨 자신의 배경이 선택을
+              나타내고 이건 숨어 있다 — 선택 상태가 JS에 기대면 안 된다. #}
+          <span class="pick-marker" aria-hidden="true"></span>
           {%- for m in page.extra.install %}
           <input class="pick-in" type="radio" name="install-channel" id="inst-{{ loop.index }}"{% if loop.first %} checked{% endif %}>
           <label class="pick-tab" for="inst-{{ loop.index }}">{{ m.label }}</label>

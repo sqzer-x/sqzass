@@ -324,21 +324,30 @@ main { display: block; }
   color: transparent;
 }
 
-/* 설치 한 줄 — 페이지에서 제일 중요한 것. CTA 바로 아래에서 눈에 띈다. */
-/* 채널 선택 + 명령. fieldset이라 기본 테두리·여백을 먼저 지운다.
-   align-items: flex-start라서 탭 행도 명령 상자도 제 내용만큼만 넓어진다. */
+/* 설치 명령 — 페이지에서 제일 중요한 것. CTA 바로 아래에서 눈에 띈다.
+
+   탭과 명령을 카드 하나로 묶는다. 둘을 떼어 놓으면 화면에 떠 있는 조각이
+   둘이 되고, 무엇이 무엇을 바꾸는지가 근접성으로만 설명된다. */
 .install {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
+  align-items: stretch;
   max-width: 100%;
-  border: 0;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--bg-hi);
   padding: 0;
   margin: 1.6rem 0 0;
   min-width: 0;
+  overflow: hidden;
 }
-.pick-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pick-tabs {
+  position: relative;
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.32rem;
+  border-bottom: 1px solid var(--line);
+}
 .pick-in {
   position: absolute;
   width: 1px;
@@ -347,54 +356,73 @@ main { display: block; }
   pointer-events: none;
 }
 .pick-tab {
+  position: relative;
+  z-index: 1;
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1;
   color: var(--muted);
-  padding: 0.42rem 0.72rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: transparent;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  padding: 0.44rem 0.8rem;
+  border-radius: 9px;
+  transition: color 0.18s;
 }
-.pick-tab:hover { color: var(--ink); border-color: var(--ink-3); }
-.pick-in:checked + .pick-tab {
-  color: var(--accent-ink);
-  border-color: rgba(255, 140, 90, 0.55);
-  background: rgba(255, 120, 70, 0.1);
-}
+.pick-tab:hover { color: var(--ink); }
+.pick-in:checked + .pick-tab { color: var(--accent-ink); }
+/* JS가 없을 때의 선택 표시. 표시자가 살아나면 이 배경은 넘겨준다. */
+.pick-in:checked + .pick-tab { background: rgba(255, 120, 70, 0.12); }
+.install.is-enhanced .pick-in:checked + .pick-tab { background: transparent; }
 /* 라디오가 화면에 없으므로 포커스 링은 라벨이 받는다. 없으면 키보드로 못 쓴다. */
 .pick-in:focus-visible + .pick-tab {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+/* 선택을 따라 미끄러지는 표시자. 이동하는 동안 진행 방향으로 눌렸다 펴진다 —
+   히어로의 squeeze와 같은 동작이고, 이 제품이 하는 일 자체다. */
+.pick-marker {
+  position: absolute;
+  top: 0.32rem;
+  left: 0;
+  height: calc(100% - 0.64rem);
+  border-radius: 9px;
+  background: rgba(255, 120, 70, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 90, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: center;
+}
+.install.is-enhanced .pick-marker { opacity: 1; }
 
-.pick-panel {
-  display: none;
-  align-items: center;
-  gap: 0.4rem;
+/* 패널을 격자 한 칸에 겹쳐 쌓는다. 카드 폭이 가장 긴 명령에 맞춰 고정되므로
+   탭을 옮길 때마다 상자가 늘었다 줄었다 하지 않는다.
+   숨김은 display가 아니라 visibility다 — 폭 계산에는 남아 있어야 한다. */
+.pick-panels {
+  display: grid;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid rgba(255, 140, 90, 0.45);
-  border-radius: 13px;
-  background: var(--bg-hi);
-  box-shadow: 0 4px 22px rgba(255, 110, 60, 0.16);
-  padding: 0.72rem 0.55rem 0.72rem 1.05rem;
 }
-/* 패널만 따로 감싼 건 `nth-child`를 정확히 세기 위해서다. fieldset 바로 아래에
-   두면 legend와 탭 행까지 형제로 세어 한 칸씩 밀린다 — 실제로 그렇게 밀려서
-   AUR 탭에 cargo 명령이 나왔다.
-
-   첫 패널이 기본이다. `:has()`를 모르는 브라우저에서도 curl 명령은 그대로
+.pick-panel {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.78rem 0.6rem 0.78rem 1.05rem;
+  visibility: hidden;
+  opacity: 0;
+  transform-origin: left center;
+}
+/* 복사 버튼은 카드 오른쪽 끝에 붙는다. 명령 길이를 따라가면 탭을 옮길 때마다
+   버튼이 300px씩 이동하는데, 누르려던 것이 도망가는 셈이다. */
+.pick-panel > .inst-copy { margin-left: auto; }
+/* 첫 패널이 기본이다. `:has()`를 모르는 브라우저에서도 curl 명령은 그대로
    보이고 탭만 안 먹는다 — 이 페이지에서 가장 중요한 내용이 사라지면 안 된다.
    채널이 셋인 건 packaging/README.md의 결정이고, 늘리면 여기도 는다. */
-.pick-panels { min-width: 0; max-width: 100%; }
-.pick-panel:first-child { display: flex; }
-.install:has(#inst-2:checked) .pick-panel { display: none; }
-.install:has(#inst-2:checked) .pick-panel:nth-child(2) { display: flex; }
-.install:has(#inst-3:checked) .pick-panel { display: none; }
-.install:has(#inst-3:checked) .pick-panel:nth-child(3) { display: flex; }
+.pick-panel:first-child { visibility: visible; opacity: 1; }
+.install:has(#inst-2:checked) .pick-panel,
+.install:has(#inst-3:checked) .pick-panel { visibility: hidden; opacity: 0; }
+.install:has(#inst-2:checked) .pick-panel:nth-child(2),
+.install:has(#inst-3:checked) .pick-panel:nth-child(3) { visibility: visible; opacity: 1; }
 
 .install-note { margin: 0.7rem 0 0; font-size: 0.82rem; color: var(--muted); }
 

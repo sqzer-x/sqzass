@@ -37,6 +37,54 @@
 
   var EASE = [0.16, 1, 0.3, 1];
 
+  /* 설치 채널 전환.
+
+     선택 자체는 radio + CSS가 이미 하고 있다. 여기서 더하는 건 두 가지뿐이다 —
+     선택을 따라 미끄러지는 표시자와, 명령이 바뀔 때의 squeeze. 둘 다 없어도
+     기능은 그대로다(is-enhanced를 붙이기 전까지 CSS 배경이 선택을 나타낸다).
+
+     squeeze는 장식이 아니라 이 제품의 동작이다. 히어로의 강조 줄이 옆으로
+     눌려 들어오는 것과 같은 스프링을 쓴다. */
+  var install = document.querySelector(".install");
+  if (install) {
+    var marker = install.querySelector(".pick-marker");
+    var tabs = [].slice.call(install.querySelectorAll(".pick-tab"));
+    var radios = [].slice.call(install.querySelectorAll(".pick-in"));
+    var panels = [].slice.call(install.querySelectorAll(".pick-panel"));
+
+    var place = function (animated) {
+      var i = radios.findIndex(function (r) { return r.checked; });
+      if (i < 0) return;
+      var tab = tabs[i];
+      var x = tab.offsetLeft;
+      var w = tab.offsetWidth;
+      /* x와 scaleX를 따로 준다. transform 문자열을 두 번 애니메이션하면 뒤엣것이
+         앞엣것을 덮어 이동이 사라진다. */
+      if (!animated) {
+        M.animate(marker, { width: w + "px", x: x, scaleX: 1 }, { duration: 0 });
+        install.classList.add("is-enhanced");
+        return;
+      }
+      /* 이동하는 동안 눌렸다 펴진다. */
+      M.animate(marker, { width: w + "px", x: x }, { duration: 0.34, ease: EASE });
+      M.animate(marker, { scaleX: [0.72, 1] },
+        { type: "spring", stiffness: 260, damping: 18 });
+
+      M.animate(panels[i], { opacity: [0, 1], scaleX: [1.05, 1] },
+        { type: "spring", stiffness: 240, damping: 22 });
+    };
+
+    place(false);
+    radios.forEach(function (r) {
+      r.addEventListener("change", function () { place(true); });
+    });
+    /* 폰트가 늦게 붙으면 탭 폭이 달라진다. 그때 표시자가 어긋난 채로 남는다. */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { place(false); });
+    }
+    window.addEventListener("resize", function () { place(false); });
+  }
+
   /* 히어로 로드 시퀀스 */
   var heroEls = document.querySelectorAll(".hero [data-reveal]");
   heroEls.forEach(function (el) { el.style.opacity = "0"; });
