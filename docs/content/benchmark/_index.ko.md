@@ -8,7 +8,7 @@ toc = true
 ## minimal — 제목 하나와 문단 하나
 
 <div class="bench">
-<span class="b-name">sqzass</span><span class="b-row"><svg><rect class="b-us" width="0.6%" height="100%" rx="3"></rect></svg><span class="b-val">18 ms</span></span>
+<span class="b-name">sqzass</span><span class="b-row"><svg><rect class="b-us" width="0.385%" height="100%" rx="3"></rect></svg><span class="b-val">18 ms</span></span>
 <span class="b-name">Hugo</span><span class="b-row"><svg><rect width="2%" height="100%" rx="3"></rect></svg><span class="b-val">93 ms</span></span>
 <span class="b-name">Zola</span><span class="b-row"><svg><rect width="3%" height="100%" rx="3"></rect></svg><span class="b-val">141 ms</span></span>
 <span class="b-name">Jekyll</span><span class="b-row"><svg><rect width="9.5%" height="100%" rx="3"></rect></svg><span class="b-val">442 ms</span></span>
@@ -18,7 +18,7 @@ toc = true
 ## blog — 문단 여섯, 목록, 인용, 링크
 
 <div class="bench">
-<span class="b-name">sqzass</span><span class="b-row"><svg><rect class="b-us" width="0.6%" height="100%" rx="3"></rect></svg><span class="b-val">25 ms</span></span>
+<span class="b-name">sqzass</span><span class="b-row"><svg><rect class="b-us" width="0.373%" height="100%" rx="3"></rect></svg><span class="b-val">25 ms</span></span>
 <span class="b-name">Hugo</span><span class="b-row"><svg><rect width="1.7%" height="100%" rx="3"></rect></svg><span class="b-val">112 ms</span></span>
 <span class="b-name">Zola</span><span class="b-row"><svg><rect width="2.6%" height="100%" rx="3"></rect></svg><span class="b-val">172 ms</span></span>
 <span class="b-name">Jekyll</span><span class="b-row"><svg><rect width="11.2%" height="100%" rx="3"></rect></svg><span class="b-val">752 ms</span></span>

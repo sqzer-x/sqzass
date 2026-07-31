@@ -20,7 +20,7 @@ follows.
 An `@/` link that resolves to nothing is an error:
 
 ```
-docs/content/start/first-site.md: 해석할 수 없는 내부 링크가 있습니다:
+docs/content/start/first-site.md: 어디도 가리키지 않는 링크가 있습니다:
   @/start/setup.md
 ```
 
@@ -49,7 +49,11 @@ exists. The shortcut — running a regex over the finished HTML — silently ski
 any element whose attributes are single-quoted or unquoted, which produces a
 class of bug you find in production rather than in the build.
 
-Image sources go through the same path, so `![](@/images/x.png)` works too.
+Images go through the same *checker*, but not the same syntax. `@/` resolves
+against the table of markdown pages, and an image in `static/` is not in it, so
+`![](@/images/x.png)` stops the build. Write the root-absolute path instead —
+`![](/images/x.png)` — and the build verifies the file is there, so a typo in an
+image path fails the same way a typo in a link does.
 
 ## Generated files are link targets too
 

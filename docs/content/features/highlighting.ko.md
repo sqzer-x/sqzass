@@ -20,7 +20,7 @@ theme_dark  = "base16-ocean.dark"
 강조된 블록은 이렇게 생겼습니다.
 
 ```html
-<code class="language-rust"><span class="hl-source hl-rust">…</span></code>
+<pre class="highlight"><code class="language-rust" data-lang="rust"><span class="hl-source hl-rust">…</span></code></pre>
 ```
 
 `style="color:#268bd2"`가 아닙니다. 이 차이가 세 가지를 결정합니다.

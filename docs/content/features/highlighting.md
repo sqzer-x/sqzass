@@ -20,7 +20,7 @@ theme_dark  = "base16-ocean.dark"
 A highlighted block looks like this:
 
 ```html
-<code class="language-rust"><span class="hl-source hl-rust">…</span></code>
+<pre class="highlight"><code class="language-rust" data-lang="rust"><span class="hl-source hl-rust">…</span></code></pre>
 ```
 
 Not `style="color:#268bd2"`. The distinction decides three things.

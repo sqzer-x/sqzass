@@ -46,8 +46,8 @@ and it costs a JSON file.
 
 ## What it costs
 
-The index is the body text of every page. For this site that is a couple of
-kilobytes per language, fetched once, on the first search. It grows linearly
+The index is the body text of every page. For this site that is around 80 KB
+per language, fetched once, on the first search. It grows linearly
 with your documentation, and there is a size past which this is the wrong
 design — but that size is far beyond a documentation site, and reaching it is a
 better problem than shipping search that cannot find your own words.
@@ -103,7 +103,7 @@ nobody reads by hand.
 
 ## The client
 
-`search.js` on this site is about 150 lines and has no dependencies. The dialog
+`search.js` on this site is a couple of hundred lines and has no dependencies. The dialog
 is a `<dialog>`, so Escape, the backdrop, the focus trap and returning focus to
 the trigger are the platform's behaviour rather than code. Open it with
 `Ctrl`/`⌘` + `/`.

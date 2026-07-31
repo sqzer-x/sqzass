@@ -19,6 +19,7 @@ Two objects are in scope on every page: `site` and `page`.
 | `site.sections` | Top-level sections **in this language**. |
 | `site.highlight_css` | URL of the generated highlight stylesheet, or nothing if highlighting is off. |
 | `site.search` | URL of this language's search index, or nothing with `[search] enabled = false`. |
+| `site.feed` | URL of this language's Atom feed, or nothing when no page in it carries a date. See [Feeds](@/features/feeds.md). |
 
 `site.sections` contains only the current language's tree, which is what makes
 navigation safe: an untranslated page is not in it, so a link to it cannot be
@@ -39,10 +40,11 @@ and `weight`.
 | `page.toc` | Whether the author asked for a contents list. |
 | `page.toc_entries` | The contents themselves — `{level, id, title, children}`, nested. |
 | `page.translations` | Only languages this page exists in. Empty means no switcher. |
-| `page.section` | The section this page belongs to, or nothing at the top level. |
-| `page.prev`, `page.next` | The neighbouring pages **within this section**. |
+| `page.section` | The section this page belongs to. Nothing at the top level, and nothing on a section index — a section is not inside itself. |
+| `page.prev`, `page.next` | The neighbouring pages **within this section**. Nothing on a section index, for the same reason. |
 | `page.children` | A section's own pages. Empty on ordinary pages. |
 | `page.is_section` | |
+| `page.date` | The publication date in parts — `year`, `month`, `day`, `date`, `iso` — or nothing. See [Feeds](@/features/feeds.md). |
 | `page.extra` | Your `[extra]` table. |
 
 ## page.children is two things

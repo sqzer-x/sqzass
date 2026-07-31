@@ -16,7 +16,7 @@ base_url = "https://example.com"
 ## 오타는 에러입니다
 
 ```
-error: sqzass.toml 파싱 실패: TOML parse error at line 8, column 1
+error: [SQZASS_E_CONFIG] sqzass.toml 파싱 실패: TOML parse error at line 8, column 1
   |
 8 | theme_ligth = "InspiredGitHub"
   | ^^^^^^^^^^^

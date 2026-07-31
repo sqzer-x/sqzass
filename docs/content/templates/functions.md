@@ -47,14 +47,17 @@ Standard Jinja2 syntax works: `{% if %}`, `{% for %}`, `{% extends %}`,
 and the usual filters — `safe`, `escape`, `length`, `join`, `default`, `upper`,
 `lower`, `replace`, `trim`, `first`, `last`, `reverse`, `sort`, `map`,
 `select`, `selectattr`, `batch`, `slice`, `int`, `float`, `abs`, `round`,
-`urlencode`, `striptags`, `indent`.
+`indent`.
 
 Our own templates use `{% macro %}` and `{% from "partials/sidebar.html" import nav %}`,
 so those two are exercised on every build.
 
-`tojson` is **not** available: minijinja's `json` feature is off, and turning it
-on to serialise a value into a template is a dependency for something a
-`{% for %}` loop already does.
+Three filters a Jinja2 habit reaches for are **not** here: `tojson`,
+`urlencode` and `striptags`. Each is behind a minijinja feature we leave off,
+and each is a dependency for something already covered — a `{% for %}` loop, a
+URL that arrives ready to use, or markup you did not have to strip because you
+wrote it. Calling one is a build error, not an empty string, so you find out at
+build time rather than in the page.
 
 ## Nothing else exists
 

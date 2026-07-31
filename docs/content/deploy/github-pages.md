@@ -17,6 +17,7 @@ name: Deploy docs
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -45,14 +46,31 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.retry.outputs.page_url }}
     steps:
       - id: deployment
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+
+      - name: Wait for the previous deployment to settle
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 90
+
+      - id: retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v5
 ```
 
 `cancel-in-progress: false` is worth keeping. Cancelling a deploy that is
 halfway through leaves the site partly updated, which is worse than waiting.
+
+The retry is not defensive padding — it is the fix for a failure this site hit.
+`concurrency` serialises workflow *runs*, but a Pages deployment outlives its
+run: GitHub can still be processing the previous one after the workflow that
+started it has finished. Push two commits close together and the second lands
+in that window and dies with a 400, "due to in progress deployment". Waiting and
+trying once more is enough, and it is safe: the deploy fails before it changes
+anything, so a retry cannot leave the site half updated.
 
 ## A custom domain
 

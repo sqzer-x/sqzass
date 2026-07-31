@@ -46,14 +46,17 @@ toc = true
 `{% set %}`, 그리고 익숙한 필터들 — `safe`, `escape`, `length`, `join`,
 `default`, `upper`, `lower`, `replace`, `trim`, `first`, `last`, `reverse`,
 `sort`, `map`, `select`, `selectattr`, `batch`, `slice`, `int`, `float`, `abs`,
-`round`, `urlencode`, `striptags`, `indent`.
+`round`, `indent`.
 
 이 사이트의 템플릿이 `{% macro %}`와
 `{% from "partials/sidebar.html" import nav %}`를 쓰므로, 그 둘은 빌드마다 실제로
 돌고 있습니다.
 
-`tojson`은 **없습니다.** minijinja의 `json` 피처가 꺼져 있고, `{% for %}` 루프로
-이미 되는 일을 위해 의존성을 켜지는 않습니다.
+Jinja2 습관으로 손이 가는 필터 셋은 **없습니다.** `tojson`, `urlencode`,
+`striptags`입니다. 셋 다 켜지 않은 minijinja 피처 뒤에 있고, 셋 다 이미 되는
+일을 위한 의존성입니다 — `{% for %}` 루프, 바로 쓸 수 있는 형태로 오는 URL,
+직접 썼으니 벗겨 낼 일이 없는 마크업. 불러도 빈 문자열이 아니라 빌드 에러라서
+페이지가 아니라 빌드 시점에 알게 됩니다.
 
 ## 그 밖엔 없습니다
 

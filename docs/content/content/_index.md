@@ -22,9 +22,11 @@ content/
         └── dive.md      →  /guide/deep/dive/
 ```
 
-A directory *without* an `_index.md` still produces URLs for the pages inside
-it, but it is not a section: nothing collects those pages, and no navigation
-entry exists for the directory itself.
+A directory *without* an `_index.md` still becomes a section, titled after the
+directory, so its pages are collected and it appears in navigation — forgetting
+the file must not make pages vanish from the sidebar. What it does not get is an
+index page: `/guide/` itself 404s until you add one. Add `_index.md` when the
+section needs a title of its own, a description, or a body.
 
 ## Why every URL is a directory
 

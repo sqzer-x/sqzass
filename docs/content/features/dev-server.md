@@ -9,7 +9,10 @@ toc = true
 sqzass serve -i docs
 ```
 
-<http://127.0.0.1:3000>, rebuilding whenever a file under the site root changes.
+<http://127.0.0.1:3000>, rebuilding whenever anything in `content/`, `templates/`,
+`static/` or `i18n/` changes, or `sqzass.toml` itself. The output directory is
+deliberately not watched: a build that triggered on its own output would never
+stop rebuilding.
 
 | Flag | | |
 |---|---|---|

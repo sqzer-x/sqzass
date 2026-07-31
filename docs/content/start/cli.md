@@ -97,7 +97,7 @@ without parsing text.
 The identifier is printed with the message, so it can be searched for:
 
 ```
-error: [SQZASS_E_CONTENT] content/_index.md: 해석할 수 없는 내부 링크가 있습니다:
+error: [SQZASS_E_CONTENT] content/_index.md: 어디도 가리키지 않는 링크가 있습니다:
   @/nope.md
 ```
 

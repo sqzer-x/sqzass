@@ -95,7 +95,7 @@ on_this_page = "이 페이지"
 ```
 
 ```html
-<a href="{{ home }}">{{ t("home") }}</a>
+<a href="{{ site.base_path }}/">{{ t("home") }}</a>
 ```
 
 `t`는 지금 렌더 중인 페이지에서 언어를 읽습니다. 그래서 템플릿은 자기가 어느

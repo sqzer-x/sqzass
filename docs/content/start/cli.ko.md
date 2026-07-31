@@ -12,7 +12,7 @@ sqzass serve [-i DIR] [-b ADDR] [-p PORT] [--drafts] [--base-url URL]
 sqzass doctor [-i DIR] [--fail-on note|warn] [--drafts]
 ```
 
-`--json`은 셋 다에 붙습니다.
+`--json`은 어느 명령에나 붙습니다.
 
 ## init
 
@@ -96,7 +96,7 @@ sqzass doctor -i mysite --json            # 모든 지적을 데이터로
 식별자는 메시지와 함께 찍히므로 그대로 검색할 수 있습니다.
 
 ```
-error: [SQZASS_E_CONTENT] content/_index.md: 해석할 수 없는 내부 링크가 있습니다:
+error: [SQZASS_E_CONTENT] content/_index.md: 어디도 가리키지 않는 링크가 있습니다:
   @/nope.md
 ```
 

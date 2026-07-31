@@ -57,8 +57,9 @@ The 20 most recent dated pages, newest first, each with a title, a permalink, an
 `updated` timestamp, and the `description` as its summary. Twenty is a cap, not
 a coincidence — a feed that grows without limit eventually becomes a download.
 
-Pages within a day are ordered by title, so two posts dated the same day come
-out in the same order on every build.
+Pages that land on the same instant are ordered by title, so they come out in
+the same order on every build. Since a bare date becomes midnight UTC, in
+practice that is every pair of posts written on the same day.
 
 A date with no time becomes midnight UTC. Atom will not accept a bare date, and
 a reader that cannot parse a timestamp drops the entry without telling anyone.

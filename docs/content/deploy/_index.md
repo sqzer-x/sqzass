@@ -119,7 +119,7 @@ rather than take on trust:
 | `assets/highlight.<hash>.css` | unless `[highlight] enabled = false` |
 | `asset-manifest.json` | logical name → written URL, always |
 | `<path>/index.html` | one per page |
-| `search-<lang>.json` | one per language |
+| `search-<lang>.json` | one per language, unless `[search] enabled = false` |
 | `feed-<lang>.xml` | one per language that has a dated page |
 | `sitemap.xml`, `robots.txt` | unless `static/` supplied one with that name |
 | `llms.txt` | same terms |

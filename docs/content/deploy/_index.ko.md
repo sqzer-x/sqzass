@@ -113,7 +113,7 @@ GitHub이 영영 찾지 않을 파일입니다.
 | `assets/highlight.<해시>.css` | `[highlight] enabled = false`가 아니면 |
 | `asset-manifest.json` | 논리 이름 → 실제 URL, 항상 |
 | `<경로>/index.html` | 페이지마다 하나 |
-| `search-<언어>.json` | 언어마다 하나 |
+| `search-<언어>.json` | `[search] enabled = false`가 아니면 언어마다 하나 |
 | `feed-<언어>.xml` | 날짜 있는 페이지가 있는 언어마다 하나 |
 | `sitemap.xml`, `robots.txt` | 같은 이름을 `static/`에 두지 않았다면 |
 | `llms.txt` | 같은 조건 |

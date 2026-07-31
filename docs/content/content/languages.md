@@ -98,7 +98,7 @@ on_this_page = "이 페이지"
 ```
 
 ```html
-<a href="{{ home }}">{{ t("home") }}</a>
+<a href="{{ site.base_path }}/">{{ t("home") }}</a>
 ```
 
 `t` reads the language from the page being rendered, so a template never asks

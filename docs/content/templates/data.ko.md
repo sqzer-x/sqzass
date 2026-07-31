@@ -17,8 +17,9 @@ toc = true
 | `site.base_path` | 서브경로 아래 사이트일 때의 경로 접두사, 루트면 빈 값. 템플릿이 직접 쓰는 URL에만 필요합니다. |
 | `site.language` | 지금 렌더 중인 페이지의 언어. |
 | `site.sections` | **이 언어의** 최상위 섹션들. |
-| `site.highlight_css` | 생성된 하이라이트 스타일시트 URL. 강조가 꺼져 있으면 없습니다. |
+| `site.highlight_css` | 생성된 하이라이트 스타일시트 URL. 구문 강조가 꺼져 있으면 없습니다. |
 | `site.search` | 이 언어의 검색 색인 URL. `[search] enabled = false`면 없습니다. |
+| `site.feed` | 이 언어의 Atom 피드 URL. 날짜 있는 페이지가 하나도 없으면 없습니다. [피드](@/features/feeds.md)를 참고하세요. |
 
 `site.sections`에는 현재 언어의 트리만 담깁니다. 내비게이션이 안전한 이유가
 이것입니다. 번역되지 않은 페이지는 여기 없으므로 그 링크를 그릴 수가 없습니다.
@@ -38,11 +39,12 @@ toc = true
 | `page.toc` | 저자가 목차를 원했는지. |
 | `page.toc_entries` | 목차 자체 — `{level, id, title, children}`, 중첩된 형태. |
 | `page.translations` | 이 페이지가 존재하는 언어만. 비어 있으면 전환 UI를 그리지 않으면 됩니다. |
-| `page.section` | 이 페이지가 속한 섹션. 최상위 페이지에는 없습니다. |
-| `page.prev`, `page.next` | **같은 섹션 안에서의** 이웃 페이지. |
+| `page.section` | 이 페이지가 속한 섹션. 최상위 페이지에는 없고, 섹션 인덱스에도 없습니다 — 섹션은 자기 안에 있지 않으니까요. |
+| `page.prev`, `page.next` | **같은 섹션 안에서의** 이웃 페이지. 같은 이유로 섹션 인덱스에는 없습니다. |
 | `page.children` | 섹션의 자식 페이지들. 일반 페이지에서는 비어 있습니다. |
 | `page.is_section` | |
-| `page.extra` | 당신의 `[extra]` 테이블. |
+| `page.date` | 발행 날짜를 조각으로 — `year`, `month`, `day`, `date`, `iso`. 없으면 없습니다. [피드](@/features/feeds.md)를 참고하세요. |
+| `page.extra` | 직접 정의한 `[extra]` 테이블. |
 
 ## page.children은 두 가지입니다
 
