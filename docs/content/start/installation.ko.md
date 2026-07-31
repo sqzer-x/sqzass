@@ -45,8 +45,8 @@ cargo build --release
 | C 컴파일러 | rustc가 링커 구동에 씁니다. 기본 빌드는 구문 강조의 정규식 엔진인 Oniguruma도 이걸로 컴파일합니다. |
 | 그 외 | — |
 
-정적 릴리스가 싣는 구성 그대로 — 순수 Rust 정규식 엔진, C 소스 컴파일
-없음 — 는 플래그 하나 거리입니다:
+정적 릴리스가 싣는 구성 그대로, 즉 순수 Rust 정규식 엔진에 C 소스 컴파일이
+없는 상태도 플래그 하나면 됩니다.
 
 ```bash
 cargo build --release --no-default-features --features pure-rust
@@ -67,7 +67,7 @@ sudo install -m755 sqzass-*/sqzass /usr/local/bin/
 리눅스 빌드는 정적이라 glibc를 요구하지 않고, 빌드한 배포판보다 오래된 배포판에서도
 돕니다. 순수 Rust 정규식 엔진을 쓰는 유일한 빌드이기도 합니다 — 다른 모든 곳에서
 sqzass는 코드가 많은 사이트에서 눈에 띄게 빠른 Oniguruma로 강조하는데, Oniguruma는
-C 바인딩이고 C 바인딩은 정확히 musl 정적 빌드를 깨뜨립니다. 두 엔진의 문법 집합도
+C 바인딩이고, musl 정적 빌드를 깨뜨리는 게 바로 C 바인딩입니다. 두 엔진의 문법 집합도
 같지 않습니다. 순수 Rust 엔진이 일부 문법의 정규식을 못 돌리기 때문에 정적
 아티팩트에는 문법 일곱 개가 통째로 빠집니다 — PowerShell, JavaScript (Babel),
 Salt State, ARM Assembly 등이요. 네이티브 빌드가 온전히 칠하는 ` ```powershell `

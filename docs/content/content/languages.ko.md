@@ -58,8 +58,9 @@ content/start/
 
 이름만이 아니라 **경로**가 중요합니다. `a/notes.md`와 `b/notes.md`는 서로의 번역이
 아니라 다른 두 페이지입니다. 그리고 **선언한 언어인 접미사만** 떼므로,
-`notes.ab.md`라는 파일은 `ab`가 `[languages]`에 없는 한 `notes.ab`를 키로 갖습니다. 파일명이 달라야 할 때 — 슬러그를 현지화하는 경우 등 — 는 양쪽
-파일에 같은 `translation_key`를 주면 됩니다.
+`notes.ab.md`라는 파일은 `ab`가 `[languages]`에 없는 한 `notes.ab`를 키로 갖습니다.
+파일명이 달라야 할 때는 — 슬러그를 현지화하는 경우 등 — 양쪽 파일에 같은
+`translation_key`를 주면 됩니다.
 
 ```toml
 # content/start/installation.md
@@ -79,8 +80,8 @@ translation_key = "install"
 
 ## UI 문자열
 
-페이지의 글은 `content/`에 있습니다. **템플릿이** 넣는 말 — "본문으로 건너뛰기",
-"이 페이지", "이전" — 은 `i18n/<코드>.toml`에 둡니다.
+페이지의 글은 `content/`에 있습니다. **템플릿이** 넣는 말은 `i18n/<코드>.toml`에
+둡니다 — "본문으로 건너뛰기", "이 페이지", "이전" 같은 것들입니다.
 
 ```toml
 # i18n/en.toml

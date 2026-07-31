@@ -25,11 +25,11 @@ Netlify 빌드 이미지에는 Rust 툴체인이 기본으로 없고, 넣으면 
 도는 것과 같은 성질입니다.
 
 소스에서 빌드하고 싶으면 `cargo install --git
-https://github.com/sqzer-x/sqzass` 도 됩니다. 다만 느립니다.
+https://github.com/sqzer-x/sqzass`도 됩니다. 다만 느립니다.
 
 ## 배포 프리뷰에는 자기 base_url이 필요합니다
 
-프리뷰는 당신의 도메인이 아니라 `deploy-preview-42--yoursite.netlify.app`에서
+프리뷰는 본 도메인이 아니라 `deploy-preview-42--yoursite.netlify.app`에서
 돕니다. Netlify가 그 주소를 `$DEPLOY_PRIME_URL`에 넣어 주고, `--base-url`이
 바로 이 경우를 위해 설정을 덮어씁니다. 그래야 canonical과 sitemap, OpenGraph 태그가
 프로덕션이 아니라 프리뷰를 가리킵니다.

@@ -73,7 +73,7 @@ title = "mysite"
 </html>
 ```
 
-`site.highlight_css` 줄은 빌드가 당신의 구문 테마에서 만들어 주는 스타일시트입니다.
+`site.highlight_css` 줄은 빌드가 구문 테마에서 만들어 주는 스타일시트입니다.
 빼면 코드 블록에 색이 없이 나옵니다.
 
 ## 빌드하기
