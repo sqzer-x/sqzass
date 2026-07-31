@@ -26,11 +26,11 @@ heading_anchors       = "right"   # none | left | right
 
 ```markdown
 > [!NOTE]
-> 미리 빌드된 바이너리는 계획에 있지만 아직 배포하지 않았습니다.
+> 정적 리눅스 빌드는 순수 Rust 정규식 엔진을 싣습니다.
 ```
 
 > [!NOTE]
-> 미리 빌드된 바이너리는 계획에 있지만 아직 배포하지 않았습니다.
+> 정적 리눅스 빌드는 순수 Rust 정규식 엔진을 싣습니다.
 
 `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`을 인식합니다.
 
@@ -77,11 +77,6 @@ heading_anchors       = "right"   # none | left | right
 
 `heading_anchors`는 눈에 보이는 `#` 링크를 정합니다. `"right"`(기본), `"left"`,
 `"none"` 중 하나입니다.
-
-## 원시 HTML
-
-그대로 통과시킵니다. 여기 콘텐츠는 믿을 수 있습니다 — 저장소 안에 있고, 직접 썼고,
-코드와 같은 커밋에서 리뷰됩니다. 이걸 새니타이즈하는 건 시늉일 뿐입니다.
 
 ## 키가 아닌 설정 둘
 

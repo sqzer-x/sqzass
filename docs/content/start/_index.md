@@ -1,6 +1,6 @@
 +++
 title = "Getting started"
-description = "Install sqzass and build your first site"
+description = "From installing sqzass to building your first site"
 weight = 10
 sort_by = "weight"
 +++
@@ -15,7 +15,7 @@ Everything you need to get a site on screen.
 > check names (`untranslated`) are ASCII and stable, which is what a script
 > should match on anyway.
 
-## Why sqzass
+## Where the design differs
 
 **Markdown is transformed on the tree.** Link rewriting, heading anchors and the
 table of contents are AST operations via [comrak]. The common shortcut — running

@@ -1,6 +1,7 @@
 +++
 title = "Deploying"
-description = "The output is a directory. Any host that serves files will do."
+description = "A directory of files, and the hosts that will serve it"
+toc = true
 weight = 50
 sort_by = "weight"
 +++
@@ -52,15 +53,6 @@ generate that file at all. It does not overwrite yours, and it does not
 silently ignore it either.
 
 ## Where these guides go
-
-| | |
-|---|---|
-| [GitHub Pages](@/deploy/github-pages.md) | Where this site is, and the host that forced the design |
-| [Netlify](@/deploy/netlify.md) | `netlify.toml`, deploy previews |
-| [Vercel](@/deploy/vercel.md) | `vercel.json`, and why the framework machinery is inert |
-| [Cloudflare Pages](@/deploy/cloudflare-pages.md) | Two dashboard fields, and `_headers` — the host to move to when you need cache control |
-| [GitLab Pages](@/deploy/gitlab-ci.md) | `.gitlab-ci.yml`, and the project subpath |
-| [Codeberg Pages](@/deploy/codeberg-pages.md) | A `pages` branch, `.domains`, Forgejo Actions |
 
 Every one of them is the same two facts: run `sqzass build`, publish `public/`.
 The pages differ only in where those facts are written down and what each host

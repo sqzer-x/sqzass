@@ -26,11 +26,11 @@ GitHub's callout syntax, built on blockquotes:
 
 ```markdown
 > [!NOTE]
-> Prebuilt binaries are planned but not published yet.
+> The static Linux build ships the pure-Rust regex engine.
 ```
 
 > [!NOTE]
-> Prebuilt binaries are planned but not published yet.
+> The static Linux build ships the pure-Rust regex engine.
 
 `NOTE`, `TIP`, `IMPORTANT`, `WARNING` and `CAUTION` are recognised.
 
@@ -77,12 +77,6 @@ agree — they come from the same counter, in one pass.
 
 `heading_anchors` controls the visible `#` link: `"right"` (default), `"left"`,
 or `"none"`.
-
-## Raw HTML
-
-Passed through. Content here is trusted — it is in your repository, written by
-you, and reviewed in the same commit as the code. Sanitising it would be
-theatre.
 
 ## Two settings that are not keys
 

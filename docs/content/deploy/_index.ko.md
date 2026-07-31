@@ -1,6 +1,7 @@
 +++
 title = "배포"
-description = "결과물은 디렉터리입니다. 파일을 서빙하는 호스트면 어디든 됩니다."
+description = "디렉터리 하나로 나오는 결과물과, 그걸 받아 주는 호스트들"
+toc = true
 weight = 50
 sort_by = "weight"
 +++
@@ -49,15 +50,6 @@ rewrite도 없으므로, 그런 것에 기대는 게 생기면 여기서 가장 
 만들지 않습니다. 직접 넣은 것을 덮어쓰지도, 조용히 무시하지도 않습니다.
 
 ## 각 안내서
-
-| | |
-|---|---|
-| [GitHub Pages](@/deploy/github-pages.md) | 이 사이트가 있는 곳이자, 설계를 강제한 호스트 |
-| [Netlify](@/deploy/netlify.md) | `netlify.toml`, 배포 프리뷰 |
-| [Vercel](@/deploy/vercel.md) | `vercel.json`, 프레임워크 기능이 무의미한 이유 |
-| [Cloudflare Pages](@/deploy/cloudflare-pages.md) | 대시보드 두 칸과 `_headers` — 캐시 제어가 필요해지면 옮겨 갈 곳 |
-| [GitLab Pages](@/deploy/gitlab-ci.md) | `.gitlab-ci.yml`, 프로젝트 서브경로 |
-| [Codeberg Pages](@/deploy/codeberg-pages.md) | `pages` 브랜치, `.domains`, Forgejo Actions |
 
 전부 같은 사실 두 개입니다. `sqzass build`를 돌리고 `public/`을 발행한다. 문서가
 갈리는 건 그 두 사실을 어디에 적느냐와, 각 호스트가 프리뷰 URL을 뭐라고 부르느냐뿐입니다.

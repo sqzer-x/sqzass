@@ -63,6 +63,9 @@ languages at all is fine — the site is then single-language under
 | `output_dir` | `"public"` | Relative to the site root. |
 | `drafts` | `false` | `--drafts` sets this from the command line. |
 
+A draft is excluded from the build entirely, not hidden by CSS. See
+[Writing content](@/content/_index.md).
+
 ## `[markdown]`
 
 | Key | Default | |
@@ -107,6 +110,9 @@ See [Static assets](@/templates/assets.md).
 | Key | Default | |
 |---|---|---|
 | `sort_by` | `"weight"` | `weight`, `title` or `date`. A section can override it. |
+
+How a section overrides it, and why `date` alone sorts newest first, are in
+[Writing content](@/content/_index.md).
 
 ## `[search]`
 

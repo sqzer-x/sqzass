@@ -1,6 +1,6 @@
 +++
 title = "GitHub Pages"
-description = "이 사이트가 배포되는 워크플로"
+description = "이 사이트가 있는 곳이자, 설계를 강제한 호스트"
 weight = 10
 toc = true
 +++

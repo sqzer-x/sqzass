@@ -1,6 +1,6 @@
 +++
 title = "Internal links"
-description = "Link to a source file and let the build write the URL"
+description = "Links that point at the source file, and URLs the build writes"
 weight = 20
 toc = true
 +++

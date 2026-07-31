@@ -1,6 +1,6 @@
 +++
 title = "GitHub Pages"
-description = "The workflow this site is deployed with"
+description = "Where this site is, and the host that forced the design"
 weight = 10
 toc = true
 +++

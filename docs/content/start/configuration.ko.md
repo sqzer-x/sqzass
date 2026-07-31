@@ -62,6 +62,9 @@ weight = 2
 | `output_dir` | `"public"` | 사이트 루트 기준. |
 | `drafts` | `false` | 명령줄의 `--drafts`가 이걸 켭니다. |
 
+드래프트는 CSS로 감추는 게 아니라 빌드에서 통째로 빠집니다.
+[콘텐츠 작성](@/content/_index.md)을 참고하세요.
+
 ## `[markdown]`
 
 | 키 | 기본값 | |
@@ -106,6 +109,9 @@ CommonMark의 flanking 규칙은 단어 사이에 공백을 두는 언어를 전
 | 키 | 기본값 | |
 |---|---|---|
 | `sort_by` | `"weight"` | `weight`, `title`, `date`. 섹션이 각자 덮어쓸 수 있습니다. |
+
+섹션마다 덮어쓰는 방법과 `date`만 내림차순인 이유는
+[콘텐츠 작성](@/content/_index.md)에 적어 두었습니다.
 
 ## `[search]`
 

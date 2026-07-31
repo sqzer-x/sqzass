@@ -83,3 +83,5 @@ fully deterministic on its own.
 ```bash
 sqzass --version
 ```
+
+Next: [Your first site](@/start/first-site.md).

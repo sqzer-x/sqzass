@@ -1,6 +1,6 @@
 +++
 title = "정적 에셋"
-description = "복사하고, 해시를 붙이고, 원래 이름으로 조회합니다"
+description = "복사, 해시, 그리고 원래 이름으로 하는 조회"
 weight = 30
 toc = true
 +++

@@ -1,6 +1,6 @@
 +++
 title = "Development server"
-description = "Serves from memory, rebuilds on change, and reloads without losing your place"
+description = "Serving from memory, rebuilds on change, and reloads that keep your place"
 weight = 40
 toc = true
 +++

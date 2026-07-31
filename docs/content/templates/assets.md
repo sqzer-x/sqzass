@@ -1,6 +1,6 @@
 +++
 title = "Static assets"
-description = "Copied, hashed, and looked up by their original name"
+description = "Copying, hashing, and lookup by the original name"
 weight = 30
 toc = true
 +++

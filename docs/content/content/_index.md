@@ -1,6 +1,7 @@
 +++
 title = "Writing content"
 description = "Pages, sections, front matter and the URLs they produce"
+toc = true
 weight = 20
 sort_by = "weight"
 +++

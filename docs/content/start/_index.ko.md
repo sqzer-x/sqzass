@@ -1,6 +1,6 @@
 +++
 title = "시작하기"
-description = "sqzass를 설치하고 첫 사이트를 빌드합니다"
+description = "설치부터 첫 사이트를 빌드하기까지"
 weight = 10
 sort_by = "weight"
 +++
@@ -14,7 +14,7 @@ sort_by = "weight"
 > 에러 식별자(`SQZASS_E_CONTENT`)와 doctor 검사 이름(`untranslated`)은 ASCII이고
 > 안정적입니다 — 스크립트가 잡아야 할 것도 그쪽입니다.
 
-## 왜 sqzass인가
+## 설계가 다른 지점
 
 **마크다운을 트리에서 변환합니다.** 링크 재작성, 제목 앵커, 목차가 모두
 [comrak]의 AST 연산입니다. 흔한 지름길인 "완성된 HTML에 정규식 돌리기"는 속성이

@@ -1,6 +1,6 @@
 +++
 title = "내부 링크"
-description = "소스 파일을 가리키면 URL은 빌드가 씁니다"
+description = "소스 파일을 가리키는 링크와, 빌드가 대신 쓰는 URL"
 weight = 20
 toc = true
 +++
