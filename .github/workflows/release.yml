@@ -30,6 +30,13 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             flags: --no-default-features --features pure-rust
+          # ARM 리눅스는 네이티브 러너에서 짓는다. 크로스 컴파일로도 바이너리는
+          # 나오지만, 그러면 아래 스모크 스텝이 못 돈다 — 링크만 되고 런타임에
+          # 죽는 조합을 잡으라고 둔 검사라, 실행할 수 없는 아티팩트를 내보내는
+          # 것은 그 검사를 포기하는 것이다.
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            flags: --no-default-features --features pure-rust
           - os: macos-latest
             target: aarch64-apple-darwin
             flags: ""

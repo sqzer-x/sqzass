@@ -9,8 +9,11 @@ set -eu
 
 repo="sqzer-x/sqzass"
 
+# 리눅스 ARM은 커널이 `aarch64`로 답하지만, 32비트 유저스페이스를 얹은 이미지 등
+# 일부는 `arm64`로 답한다. 둘 다 같은 아티팩트다.
 case "$(uname -s)-$(uname -m)" in
   Linux-x86_64) target="x86_64-unknown-linux-musl" ;;
+  Linux-aarch64 | Linux-arm64) target="aarch64-unknown-linux-musl" ;;
   Darwin-arm64) target="aarch64-apple-darwin" ;;
   *)
     echo "지원하지 않는 플랫폼입니다: $(uname -s) $(uname -m)" >&2
@@ -34,6 +37,15 @@ url="https://github.com/$repo/releases/download/$tag/$name.tar.gz"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
+
+# 릴리스에 이 타깃이 없을 수 있다 — 타깃이 나중에 추가되면 그 이전 릴리스에는
+# 없다. 여기서 잡지 않으면 curl의 한 줄짜리 실패만 보이고, 무엇이 없는 건지
+# 알 수 없다.
+if ! curl -fsLI -o /dev/null "$url" 2>/dev/null; then
+  echo "$tag 릴리스에는 $target 빌드가 없습니다." >&2
+  echo "소스에서 빌드하세요: https://sqzass.sqzer.com/start/installation/" >&2
+  exit 1
+fi
 
 echo "받는 중: $url"
 curl -fsSL -o "$tmp/$name.tar.gz" "$url"
