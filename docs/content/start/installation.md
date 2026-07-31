@@ -41,6 +41,23 @@ yay -S sqzass          # or paru, or makepkg -si on a clone
 There is no `sqzass-bin`. Building a Rust tool from source is normal on Arch,
 and two packages would only raise the question of which one is current.
 
+## With a coding agent
+
+Paste this at an agent and it has enough to finish without guessing:
+
+```
+Set up sqzass in this project.
+Read https://sqzass.sqzer.com/agent.md first — it covers the install (sqzass is
+not on crates.io), the TOML front matter, how @/ links resolve, and the error
+identifiers to match on.
+```
+
+[`/agent.md`](/agent.md) is the long version: the same install commands, the
+rules that are not guessable from a file tree, and the exit-code table. It exists
+because an agent asked to "add a static site generator" will otherwise reach for
+`cargo install sqzass`, which fails — sqzass is installed from git or a release
+tarball.
+
 ## From source
 
 ```bash

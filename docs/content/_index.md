@@ -13,6 +13,29 @@ cta_start = "Get started"
 cta_github = "View on GitHub"
 install_pick = "Install with"
 install_note = "Every release also ships tarballs with checksums — Linux on x86_64 and ARM64, and Apple-silicon macOS."
+install_prompt_label = "Copy prompt for your agent"
+install_prompt = """
+Set up sqzass in this project.
+
+Install it — it is not on crates.io, so `cargo install sqzass` fails:
+  curl -fsSL https://sqzass.sqzer.com/install.sh | sh
+  # from source: cargo install --git https://github.com/sqzer-x/sqzass
+
+Then scaffold and build:
+  sqzass init .
+  sqzass build -i .
+
+Things you cannot infer from the file tree: front matter is TOML fenced with
++++, not YAML; internal links are @/section/page.md, the source path rather
+than the URL, and images use root-absolute paths instead; broken references
+stop the build on purpose and there is no flag to downgrade them.
+
+Runtime messages are Korean but the error identifiers (SQZASS_E_CONFIG,
+SQZASS_E_CONTENT, ...) and doctor check names are ASCII and stable — match on
+those. --json works on every command and prints one object to stdout.
+
+The long version is at https://sqzass.sqzer.com/agent.md
+"""
 
 bento_label = "Why sqzass"
 

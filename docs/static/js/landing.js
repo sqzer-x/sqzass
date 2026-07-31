@@ -16,16 +16,24 @@
   }
 
   /* 설치 한 줄 복사 */
-  document.querySelectorAll(".inst-copy").forEach(function (btn) {
+  /* 복사 버튼은 클래스가 아니라 data-copy-text로 찾는다. 클래스로 찾으면 새
+     버튼마다 아이콘 전용 스타일(.inst-copy는 2rem 정사각형)을 같이 받게 된다. */
+  document.querySelectorAll("[data-copy-text]").forEach(function (btn) {
     var label = btn.getAttribute("aria-label");
+    /* 글자를 달고 있는 버튼은 그 글자가 바뀌어야 눌린 걸 안다. 아이콘만 있는
+       버튼은 aria-label만 바꾼다 — 볼 게 없으니 들릴 것이라도 바뀌어야 한다. */
+    var text = btn.querySelector(".copy-label");
+    var was = text ? text.textContent : null;
     btn.addEventListener("click", function () {
       if (!navigator.clipboard) return;
       navigator.clipboard.writeText(btn.getAttribute("data-copy-text") || "").then(function () {
         btn.classList.add("is-done");
-        btn.setAttribute("aria-label", btn.getAttribute("data-copied"));
+        if (label) btn.setAttribute("aria-label", btn.getAttribute("data-copied"));
+        if (text) text.textContent = btn.getAttribute("data-copied");
         setTimeout(function () {
           btn.classList.remove("is-done");
-          btn.setAttribute("aria-label", label);
+          if (label) btn.setAttribute("aria-label", label);
+          if (text) text.textContent = was;
         }, 1600);
       });
     });

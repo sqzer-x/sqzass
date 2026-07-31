@@ -41,6 +41,23 @@ yay -S sqzass          # paru도, 클론해서 makepkg -si도 됩니다
 `sqzass-bin`은 만들지 않았습니다. Arch에서 Rust 도구를 소스에서 빌드하는 건
 정상이고, 패키지가 둘이면 어느 쪽이 최신인지 묻는 일만 생깁니다.
 
+## 코딩 에이전트로
+
+이걸 에이전트에 붙여 넣으면 추측 없이 끝냅니다.
+
+```
+Set up sqzass in this project.
+Read https://sqzass.sqzer.com/agent.md first — it covers the install (sqzass is
+not on crates.io), the TOML front matter, how @/ links resolve, and the error
+identifiers to match on.
+```
+
+[`/agent.md`](/agent.md)이 긴 쪽입니다. 같은 설치 명령과, 파일 트리만 봐서는
+알 수 없는 규칙들과, exit code 표가 들어 있습니다. 이 파일이 있는 이유는
+"정적 사이트 생성기를 붙여 줘"라는 말을 들은 에이전트가 그냥 두면
+`cargo install sqzass`부터 시도하기 때문입니다 — 그건 실패합니다. sqzass는
+git이나 릴리스 타르볼에서 설치합니다.
+
 ## 소스에서 빌드
 
 ```bash

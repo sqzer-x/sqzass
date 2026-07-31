@@ -425,6 +425,29 @@ main { display: block; }
 .install:has(#inst-3:checked) .pick-panel:nth-child(3) { visibility: visible; opacity: 1; }
 
 .install-note { margin: 0.7rem 0 0; font-size: 0.82rem; color: var(--muted); }
+/* 설치 카드보다 조용해야 한다. 대부분의 방문자는 셸에 붙여 넣지 에이전트에
+   붙여 넣지 않으므로, 있는 걸 알아볼 수는 있되 먼저 눈에 들어오면 안 된다. */
+.install-agent { margin: 0.55rem 0 0; }
+.agent-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  white-space: nowrap;
+  padding: 0.34rem 0.66rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.agent-copy:hover { color: var(--ink); border-color: var(--ink-3); }
+.agent-copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.agent-copy.is-done { color: var(--accent-ink); border-color: rgba(255, 140, 90, 0.55); }
+.agent-copy svg { flex: none; }
 
 .pick-panel > code {
   font-family: var(--mono);

@@ -111,7 +111,18 @@
         {%- endfor %}
         </div>
       </fieldset>
+      {#- 에이전트용 프롬프트. 설치 명령과 나란히 놓지 않고 카드 밖에 따로 둔다 —
+          붙여 넣을 곳이 셸이 아니라 다른 도구라, 같은 탭에 섞으면 어느 쪽이
+          어디로 가는 것인지 흐려진다. #}
       <p class="install-note" data-reveal>{{ page.extra.install_note }}</p>
+      <p class="install-agent" data-reveal>
+        <button class="agent-copy" type="button"
+                data-copy-text="{{ page.extra.install_prompt }}"
+                data-copied="{{ t("copied") }}">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span class="copy-label">{{ page.extra.install_prompt_label }}</span>
+        </button>
+      </p>
       <div class="lede" data-reveal>
         {{ page.content | safe }}
       </div>

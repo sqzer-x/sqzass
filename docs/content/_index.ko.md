@@ -13,6 +13,29 @@ cta_start = "시작하기"
 cta_github = "GitHub에서 보기"
 install_pick = "설치 방법"
 install_note = "릴리스마다 체크섬이 붙은 타르볼도 함께 나갑니다 — x86_64·ARM64 리눅스, Apple Silicon macOS."
+install_prompt_label = "에이전트에게 줄 프롬프트 복사"
+install_prompt = """
+Set up sqzass in this project.
+
+Install it — it is not on crates.io, so `cargo install sqzass` fails:
+  curl -fsSL https://sqzass.sqzer.com/install.sh | sh
+  # from source: cargo install --git https://github.com/sqzer-x/sqzass
+
+Then scaffold and build:
+  sqzass init .
+  sqzass build -i .
+
+Things you cannot infer from the file tree: front matter is TOML fenced with
++++, not YAML; internal links are @/section/page.md, the source path rather
+than the URL, and images use root-absolute paths instead; broken references
+stop the build on purpose and there is no flag to downgrade them.
+
+Runtime messages are Korean but the error identifiers (SQZASS_E_CONFIG,
+SQZASS_E_CONTENT, ...) and doctor check names are ASCII and stable — match on
+those. --json works on every command and prints one object to stdout.
+
+The long version is at https://sqzass.sqzer.com/agent.md
+"""
 
 bento_label = "왜 sqzass인가"
 
