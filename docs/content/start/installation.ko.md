@@ -59,8 +59,8 @@ cargo build --release --no-default-features --features pure-rust
 `.sha256`이 옆에 있습니다.
 
 ```bash
-curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-v0.1.0-x86_64-unknown-linux-musl.tar.gz
-tar xzf sqzass-*.tar.gz
+curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-x86_64-unknown-linux-musl.tar.gz
+tar xzf sqzass-x86_64-unknown-linux-musl.tar.gz
 sudo install -m755 sqzass-*/sqzass /usr/local/bin/
 ```
 

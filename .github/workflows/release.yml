@@ -74,12 +74,23 @@ jobs:
           (cd dist && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256")
           echo "archive=dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
 
+          # `releases/latest/download/<파일명>`은 파일명이 릴리스마다 같아야 쓸 수
+          # 있는데 위 이름에는 태그가 박혀 있다. 배포 안내서들이 바로 그 URL을
+          # 쓰므로 태그 없는 이름의 사본도 낸다. 태그 붙은 쪽은 그대로 둔다 —
+          # install.sh가 그 이름을 조립하고, 사본은 순수 추가다.
+          stable="sqzass-${{ matrix.target }}"
+          cp "dist/$name.tar.gz" "dist/$stable.tar.gz"
+          (cd dist && shasum -a 256 "$stable.tar.gz" > "$stable.tar.gz.sha256")
+          echo "stable=dist/$stable.tar.gz" >> "$GITHUB_OUTPUT"
+
       - uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.target }}
           path: |
             ${{ steps.package.outputs.archive }}
             ${{ steps.package.outputs.archive }}.sha256
+            ${{ steps.package.outputs.stable }}
+            ${{ steps.package.outputs.stable }}.sha256
 
       # 릴리스는 태그일 때만. 수동 실행은 "빌드가 되는지"를 확인하는 용도이고,
       # 그때 릴리스가 생기면 확인이 부작용을 갖게 된다.
@@ -90,4 +101,6 @@ jobs:
           files: |
             ${{ steps.package.outputs.archive }}
             ${{ steps.package.outputs.archive }}.sha256
+            ${{ steps.package.outputs.stable }}
+            ${{ steps.package.outputs.stable }}.sha256
           generate_release_notes: true

@@ -59,8 +59,8 @@ statically linked `x86_64-unknown-linux-musl` build and an
 `aarch64-apple-darwin` one, each with a `.sha256` beside it.
 
 ```bash
-curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-v0.1.0-x86_64-unknown-linux-musl.tar.gz
-tar xzf sqzass-*.tar.gz
+curl -LO https://github.com/sqzer-x/sqzass/releases/latest/download/sqzass-x86_64-unknown-linux-musl.tar.gz
+tar xzf sqzass-x86_64-unknown-linux-musl.tar.gz
 sudo install -m755 sqzass-*/sqzass /usr/local/bin/
 ```
 
