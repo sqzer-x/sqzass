@@ -24,7 +24,7 @@ toc = true
 `site.sections`에는 현재 언어의 트리만 담깁니다. 내비게이션이 안전한 이유가
 이것입니다. 번역되지 않은 페이지는 여기 없으므로 그 링크를 그릴 수가 없습니다.
 각 섹션은 `title`, `description`, `url`, `weight`, `pages`, `subsections`를 갖고,
-`pages`의 각 항목은 `title`, `description`, `url`, `weight`를 갖습니다.
+`pages`의 각 항목은 `title`, `description`, `url`, `weight`, `date`를 갖습니다.
 
 ## page
 
@@ -60,6 +60,29 @@ toc = true
 ```
 
 일반 페이지에서는 빈 목록입니다.
+
+## 목록 항목도 날짜를 갖습니다
+
+`child.date`는 `page.date`와 같은 조각들입니다. `year`, `month`, `day`, `date`,
+`iso`가 있고, 날짜가 없으면 없습니다. `page.prev`, `page.next`, `page.section`도
+같은 값을 싣습니다.
+
+이게 없으면 `sort_by = "date"` 섹션은 페이지를 날짜순으로 세워 놓고 정작 그 날짜를
+보여 주지 못합니다. 자기가 왜 그 순서인지 설명하지 못하는 목록이 됩니다.
+
+```html
+{% for child in page.children %}
+<a href="{{ child.url }}">
+  {%- if child.date %}
+  <time datetime="{{ child.date.date }}">{{ child.date.year }}.{{ child.date.month }}</time>
+  {%- endif %}
+  {{ child.title }}
+</a>
+{% endfor %}
+```
+
+섹션의 날짜는 그 섹션 `_index.md`에 적힌 날짜입니다. 목록을 거쳐 보든 페이지를 직접
+렌더하든 같은 날짜가 나옵니다.
 
 ## page.toc_entries
 

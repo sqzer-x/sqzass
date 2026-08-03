@@ -111,6 +111,7 @@ impl<'a> Site<'a> {
             description: s.description.clone(),
             url: s.url.clone(),
             weight: s.weight,
+            date: section_date(s, self.pages),
         })
     }
 
@@ -157,6 +158,7 @@ impl<'a> Site<'a> {
                     description: s.description.clone(),
                     url: s.url.clone(),
                     weight: s.weight,
+                    date: section_date(s, self.pages),
                 })
                 .collect();
         };
@@ -169,6 +171,7 @@ impl<'a> Site<'a> {
                 description: self.pages[i].front.description.clone(),
                 url: self.pages[i].url.clone(),
                 weight: self.pages[i].front.weight,
+                date: page_date(&self.pages[i]),
             })
             .collect();
         out.extend(node.subsections.iter().map(|s| PageRefCtx {
@@ -176,6 +179,7 @@ impl<'a> Site<'a> {
             description: s.description.clone(),
             url: s.url.clone(),
             weight: s.weight,
+            date: section_date(s, self.pages),
         }));
         out
     }
@@ -201,6 +205,7 @@ impl<'a> Site<'a> {
                 description: p.front.description.clone(),
                 url: p.url.clone(),
                 weight: p.front.weight,
+                date: page_date(p),
             }
         };
         let prev = at.checked_sub(1).map(&make);
@@ -432,6 +437,26 @@ pub struct PageRefCtx {
     pub description: String,
     pub url: String,
     pub weight: i64,
+    /// 발행 날짜. `page.date`와 같은 조각들이고, 없으면 없다.
+    ///
+    /// 목록이 이걸 못 보면 `sort_by = "date"` 섹션은 날짜순으로 줄을 세워 놓고
+    /// 정작 그 날짜를 찍지 못한다 — 목록을 만든 근거가 목록에 없는 셈이다.
+    pub date: Option<crate::feed::PageDate>,
+}
+
+/// front matter의 날짜를 컨텍스트 조각으로. 한 곳에서만 만들어야 목록의 항목과
+/// 그 페이지 자신이 같은 값을 본다.
+fn page_date(page: &Page) -> Option<crate::feed::PageDate> {
+    page.front
+        .date
+        .as_ref()
+        .and_then(crate::feed::PageDate::from_toml)
+}
+
+/// 섹션의 날짜는 그 섹션 `_index.md`의 날짜다. 인덱스가 없는 섹션 — 디렉터리만
+/// 있고 `_index.md`는 쓰지 않은 경우 — 에는 날짜도 없다.
+fn section_date(sec: &Section, pages: &[Page]) -> Option<crate::feed::PageDate> {
+    sec.index.and_then(|i| page_date(&pages[i]))
 }
 
 pub fn section_ctx(sections: &[Section], pages: &[Page]) -> Vec<SectionCtx> {
@@ -450,6 +475,7 @@ pub fn section_ctx(sections: &[Section], pages: &[Page]) -> Vec<SectionCtx> {
                     description: pages[i].front.description.clone(),
                     url: pages[i].url.clone(),
                     weight: pages[i].front.weight,
+                    date: page_date(&pages[i]),
                 })
                 .collect(),
             subsections: section_ctx(&s.subsections, pages),
@@ -535,6 +561,66 @@ mod tests {
             .map(|&i| pages[i].title.as_str())
             .collect();
         assert_eq!(titles, vec!["B", "C", "A", "None"], "실제: {titles:?}");
+    }
+
+    /// 날짜순으로 줄을 세우는 것과 그 날짜를 보여 주는 것은 다른 문제다. 목록이
+    /// 날짜를 실어 오지 못하면 날짜순 섹션은 자기가 그 순서인 근거를 못 보여 준다.
+    #[test]
+    fn listings_carry_each_pages_date() {
+        let cfg = cfg();
+        let f = Fixture::new(
+            "listing-dates",
+            &[
+                ("_index.md", &fm("Home", "")),
+                (
+                    "posts/_index.md",
+                    &fm("Posts", "sort_by = \"date\"\ndate = 2026-02-02\n"),
+                ),
+                ("posts/a.md", &fm("A", "date = 2026-01-15\n")),
+                ("posts/b.md", &fm("B", "date = 2026-09-01\n")),
+                ("posts/none.md", &fm("None", "")),
+            ],
+        );
+        let pages = f.pages(&cfg);
+        let site = Site::build(&pages, &cfg);
+        let at = |url: &str| pages.iter().find(|p| p.url == url).unwrap();
+
+        // 섹션 인덱스의 자식들. 날짜 없는 페이지는 날짜도 없다 — 빈 문자열이 아니라 없다.
+        let children = site.children_of(at("/posts/"));
+        let seen: Vec<(&str, Option<&str>)> = children
+            .iter()
+            .map(|c| (c.title.as_str(), c.date.as_ref().map(|d| d.date.as_str())))
+            .collect();
+        assert_eq!(
+            seen,
+            vec![
+                ("B", Some("2026-09-01")),
+                ("A", Some("2026-01-15")),
+                ("None", None),
+            ],
+            "실제: {seen:?}"
+        );
+
+        // 섹션 참조의 날짜는 그 섹션 `_index.md`의 날짜다. 같은 페이지가 목록에서와
+        // 자기 템플릿에서 다른 값을 보이면 안 된다.
+        let section = site.section_ref_of(at("/posts/a/")).unwrap();
+        assert_eq!(section.date.map(|d| d.date), Some("2026-02-02".into()));
+
+        // 루트의 자식은 최상위 섹션들이고, 같은 규칙을 따른다.
+        let top = site.children_of(at("/"));
+        assert_eq!(
+            top.iter()
+                .map(|c| c.date.as_ref().map(|d| d.date.as_str()))
+                .collect::<Vec<_>>(),
+            vec![Some("2026-02-02")]
+        );
+
+        // 이웃도 마찬가지 — prev/next에 날짜가 실린다.
+        let (prev, _) = site.neighbours_of(at("/posts/a/"));
+        assert_eq!(
+            prev.and_then(|p| p.date).map(|d| d.date),
+            Some("2026-09-01".into())
+        );
     }
 
     #[test]
