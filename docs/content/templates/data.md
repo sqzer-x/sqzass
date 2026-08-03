@@ -24,8 +24,8 @@ Two objects are in scope on every page: `site` and `page`.
 `site.sections` contains only the current language's tree, which is what makes
 navigation safe: an untranslated page is not in it, so a link to it cannot be
 drawn. Each section carries `title`, `description`, `url`, `weight`, `pages`
-and `subsections`, and each entry in `pages` has `title`, `description`, `url`
-and `weight`.
+and `subsections`, and each entry in `pages` has `title`, `description`, `url`,
+`weight` and `date`.
 
 ## page
 
@@ -61,6 +61,29 @@ listing template needs, and neither is obvious from the name.
 ```
 
 Ordinary pages have an empty list.
+
+## Listing entries carry their date
+
+`child.date` is the same set of parts as `page.date` — `year`, `month`, `day`,
+`date`, `iso` — or nothing. `page.prev`, `page.next` and `page.section` carry it
+too.
+
+Without it a `sort_by = "date"` section could put its pages in date order and
+then not show the date, which is a list that cannot explain its own order.
+
+```html
+{% for child in page.children %}
+<a href="{{ child.url }}">
+  {%- if child.date %}
+  <time datetime="{{ child.date.date }}">{{ child.date.year }}.{{ child.date.month }}</time>
+  {%- endif %}
+  {{ child.title }}
+</a>
+{% endfor %}
+```
+
+A section's date is the date on its `_index.md`, so a page shows the same date
+whether you reach it through a listing or render it directly.
 
 ## page.toc_entries
 
